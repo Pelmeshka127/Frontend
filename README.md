@@ -2,7 +2,7 @@
 
 To run project
 ```
-nmp install
+npm install
 
-nmp run dev
+npm run dev
 ```
