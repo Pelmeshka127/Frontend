@@ -1,5 +1,5 @@
-const getUserById = async () => {
-    return fetch("api/user?id=147")
+const getUserById = async (id: number) => {
+    return fetch("api/user?id=" + id)
     .then(response => response.json())
 
 }
