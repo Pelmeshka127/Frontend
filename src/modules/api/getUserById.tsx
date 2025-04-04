@@ -1,7 +1,7 @@
 const getUserById = async (id: number) => {
-    return fetch("api/user?id=" + id)
-    .then(response => response.json())
-
+    const response = await fetch("api/user?id=" + id)
+    const users = await response.json()
+    return users[0]
 }
 
 export default getUserById

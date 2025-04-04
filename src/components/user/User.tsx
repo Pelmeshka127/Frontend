@@ -5,9 +5,13 @@ import './user.css'
 import '../../modules/api/getUserById'
 import getUserById from "../../modules/api/getUserById";
 
+interface User {
+    id: number;
+    nickname: string;
+}
+
 const User = () => {
-    const [user, setUser] = useState()
-    console.log("In user")
+    const [user, setUser] = useState<User | null>(null)
 
     const [searchParams] = useSearchParams()
     let id = +searchParams.get("id")!
@@ -19,7 +23,7 @@ const User = () => {
 
     return (
         <div>
-            {JSON.stringify(user)}
+            {user?.nickname}
         </div>
     )
 }
