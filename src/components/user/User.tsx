@@ -6,8 +6,11 @@ import '../../modules/api/getUserById'
 import getUserById from "../../modules/api/getUserById";
 
 interface User {
-    id: number;
-    nickname: string;
+    id: number
+    nickname: string
+    firstname: string
+    secondname: string
+    profilePictureLink: string
 }
 
 const User = () => {
@@ -22,9 +25,19 @@ const User = () => {
     }, [])
 
     return (
-        <div>
-            {user?.nickname}
-        </div>
+        <>
+            <h1>
+                {user?.nickname}
+            </h1>
+            
+            <div>
+                <img src = {user?.profilePictureLink} alt="Profile picture"/>
+            </div>
+
+            <div>
+                {user?.firstname} {user?.secondname}
+            </div>
+        </>
     )
 }
 
