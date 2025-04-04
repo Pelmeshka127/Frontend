@@ -6,11 +6,13 @@ import '../../modules/api/getUserById'
 import getUserById from "../../modules/api/getUserById";
 
 interface User {
-    id: number
+    userId: number
     nickname: string
     firstname: string
     secondname: string
     profilePictureLink: string
+    dateOfBirth: string
+    phone: string
 }
 
 const User = () => {
@@ -25,19 +27,48 @@ const User = () => {
     }, [])
 
     return (
-        <>
-            <h1>
-                {user?.nickname}
-            </h1>
+        <div className="profile-container">
+        <div className="profile-card">
+          <div className="profile-header">
+            <div className="avatar-wrapper">
+              <img 
+                src={user?.profilePictureLink || '/default-avatar.png'} 
+                alt={`${user?.nickname}'s avatar`}
+                className="profile-avatar"
+                onError={(e) => {
+                  e.currentTarget.src = '/default-avatar.png';
+                }}
+              />
+            </div>
             
-            <div>
-                <img src = {user?.profilePictureLink} alt="Profile picture"/>
+            <div className="profile-titles">
+              <h1 className="profile-username">@{user?.nickname}</h1>
+              <h2 className="profile-name">
+                {user?.firstname} {user?.secondname}
+              </h2>
+            </div>
+          </div>
+  
+          <div className="profile-details">
+            <div className="detail-item">
+              <span className="detail-label">Birthday: </span>
+              <span className="detail-value">
+                {user?.dateOfBirth}
+              </span>
+            </div>
+            
+            <div className="detail-item">
+              <span className="detail-label">ID:</span>
+              <span className="detail-value">#{user?.userId}</span>
             </div>
 
-            <div>
-                {user?.firstname} {user?.secondname}
+            <div className="detail-item">
+              <span className="detail-label">Phone:</span>
+              <span className="detail-value">{user?.phone}</span>
             </div>
-        </>
+          </div>
+        </div>
+      </div>
     )
 }
 
