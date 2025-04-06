@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import './user.css'
 import '../../modules/api/getUserById'
 import getUserById from "../../modules/api/getUserById";
+import defaultProfilePicture from "../../assets/default_profile_picture.png"
 
 interface User {
     userId: number
@@ -36,6 +37,10 @@ const User = () => {
               </div>
             </div>
     )}
+    
+    if (!user.profilePictureLink) {
+        user.profilePictureLink = defaultProfilePicture
+    }
     
     return (
         <div className="profile-container">
