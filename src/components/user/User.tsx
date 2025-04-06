@@ -26,6 +26,17 @@ const User = () => {
         .then(json => setUser(json))
     }, [])
 
+    if (!user || !(user.userId)) {
+        return (
+            <div className="error-overlay">
+              <div className="error-modal">
+                <div className="error-icon">⚠️</div>
+                <h2 className="error-title">Error</h2>
+                <p className="error-message">Failed to load user</p>
+              </div>
+            </div>
+    )}
+    
     return (
         <div className="profile-container">
         <div className="profile-card">
