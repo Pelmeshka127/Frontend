@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import './user.css'
 import '../../modules/api/getUserById'
 import getUserById from "../../modules/api/getUserById";
+import defaultProfilePicture from "../../assets/default_profile_picture.png"
 
 interface User {
     userId: number
@@ -26,6 +27,21 @@ const User = () => {
         .then(json => setUser(json))
     }, [])
 
+    if (!user || !(user.userId)) {
+        return (
+            <div className="error-overlay">
+              <div className="error-modal">
+                <div className="error-icon">⚠️</div>
+                <h2 className="error-title">Error</h2>
+                <p className="error-message">Failed to load user</p>
+              </div>
+            </div>
+    )}
+    
+    if (!user.profilePictureLink) {
+        user.profilePictureLink = defaultProfilePicture
+    }
+    
     return (
         <div className="profile-container">
         <div className="profile-card">
