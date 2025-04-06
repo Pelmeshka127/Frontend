@@ -1,12 +1,7 @@
-import { useState } from 'react'
-import reactLogo from '../../assets/react.svg'
-import viteLogo from '/vite.svg'
 import '../../styles/App.css'
 import { Routes, Route } from 'react-router-dom'
 
-import UsersList from '../api/getinfo.tsx'
-
-import { User } from '../../components'
+import { User } from '../../components/user/index'
 
 function App() {
   return (

@@ -20,7 +20,7 @@ const User = () => {
     const [user, setUser] = useState<User | null>(null)
 
     const [searchParams] = useSearchParams()
-    let id = +searchParams.get("id")!
+    const id = +searchParams.get("id")!
     
     useEffect(() => {
         getUserById(id)
