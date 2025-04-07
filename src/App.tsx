@@ -1,7 +1,7 @@
-import '../../styles/App.css'
+import './App.css'
 import { Routes, Route } from 'react-router-dom'
 
-import { User } from '../../components/user/index'
+import { User } from './modules/user/index'
 
 function App() {
   return (
@@ -9,6 +9,7 @@ function App() {
       <>
         <Routes>
           <Route path="/user" element={<User />} />
+          {/* <Route path="*" element={<NoMatch />} /> */}
         </Routes>
       </>
     

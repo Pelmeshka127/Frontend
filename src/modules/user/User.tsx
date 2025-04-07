@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import './user.css'
-import '../../modules/api/getUserById'
-import getUserById from "../../modules/api/getUserById";
+import '../api/getUserById'
+import getUserById from "../api/getUserById";
 import defaultProfilePicture from "../../assets/default_profile_picture.png"
 
 interface User {
