@@ -1,8 +1,8 @@
 .profile-container {
     display: flex;
     justify-content: center;
-    padding: 1rem;
-    min-height: 50vh;
+    padding: 0rem;
+    min-height: 20vh;
     background: transparent;
   }
   
@@ -14,8 +14,8 @@
     max-width: 500px;
     overflow: hidden;
     transition: transform 0.3s ease;
-    border: 1px solid black;
-    box-sizing: border-box;
+    border: 1px solid black; 
+    box-sizing: border-box; 
   }
   
   .profile-card:hover {
@@ -44,7 +44,7 @@
   }
   
   .profile-titles {
-    flex: 1;    
+    flex: 1;
   }
   
   .profile-username {
