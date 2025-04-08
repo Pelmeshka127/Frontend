@@ -18,15 +18,28 @@ interface User {
 
 const User = () => {
     const [user, setUser] = useState<User | null>(null)
+    const [loading, setLoading] = useState(true)
 
     const [searchParams] = useSearchParams()
     const id = +searchParams.get("id")!
     
     useEffect(() => {
+        setLoading(true)
         getUserById(id)
-        .then(json => setUser(json))
+        .then(json => {
+            setUser(json)
+            setLoading(false)})
     }, [])
 
+    
+    if (loading) {
+        return (
+            <div className="spinner-container">
+                <div className="loading-spinner"></div>
+            </div>
+        )
+    }
+    
     if (!user || !(user.userId)) {
         return (
             <div className="error-overlay">

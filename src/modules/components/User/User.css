@@ -88,6 +88,14 @@
     color: #333;
   }
   
+  .spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
   .loading-spinner {
     display: inline-block;
     width: 50px;
