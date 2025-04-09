@@ -6,6 +6,8 @@ import '../../api/getUserById'
 import getUserById from "../../api/getUserById";
 import defaultProfilePicture from "../../../assets/default_profile_picture.png"
 
+const LOADING_TIMEOUT = 5000;
+
 interface User {
     userId: number
     nickname: string
@@ -19,16 +21,25 @@ interface User {
 const User = () => {
     const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
+    const [timeoutExceeded, setTimeoutExceeded] = useState(false);
 
     const [searchParams] = useSearchParams()
     const id = +searchParams.get("id")!
     
     useEffect(() => {
         setLoading(true)
+        setTimeoutExceeded(false)
+
+        const timeout = setTimeout(() => {
+            setTimeoutExceeded(true)
+            setLoading(false)
+        }, LOADING_TIMEOUT)
+        
         getUserById(id)
         .then(json => {
             setUser(json)
-            setLoading(false)})
+            setLoading(false)
+            setTimeoutExceeded(false)})
     }, [])
 
     
