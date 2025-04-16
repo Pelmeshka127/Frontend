@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import './Home.css';
 import { useEffect, useState } from 'react';
-import getCurrentUserProfile from '../../api/getCurrentUserProfile';
+import getCurrentUser from '../../api/getCurrentUser';
 
 interface User {
   userId: number
@@ -11,11 +11,12 @@ const Home = () => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    getCurrentUserProfile()
+    getCurrentUser()
     .then(json => {
         setUser(json)
       })
-    })
+    }
+  )
 
   return (
     <div className="home-container">
