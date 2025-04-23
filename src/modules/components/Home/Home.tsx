@@ -1,27 +1,22 @@
 import { Link } from 'react-router-dom';
 import './Home.css';
-import { useEffect, useState } from 'react';
-import getCurrentUser from '../../api/getCurrentUser';
+import { useQuery } from '@tanstack/react-query';
+import { getCurrentUser } from '../../api/getUser';
 
 interface User {
   userId: number
 }
 
 const Home = () => {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    getCurrentUser()
-    .then(json => {
-        setUser(json)
-      })
-    }
-  )
+  const { data: user } = useQuery<User>({
+    queryKey: ['currentUser'],
+    queryFn: getCurrentUser,
+  });
 
   return (
     <div className="home-container">
       <div className="content">
-          <h1>Добро пожаловать в КлиМакс!</h1>
+          <h1>Добро пожаловать в Мессенджер!</h1>
       </div>
       <nav className="top-nav">
         <Link to={`/user?id=${user?.userId}`} className="nav-button">

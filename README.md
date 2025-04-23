@@ -8,7 +8,6 @@ npm i @tanstack/react-query
 
 npm i react-router-dom
 
-npm run dev
 ```
 
 Чтобы перейти к странице диалога в поисковой строке надо прописать
