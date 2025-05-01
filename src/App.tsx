@@ -5,6 +5,7 @@ import { User } from './modules/components/User/index';
 import { NoMatch } from './components/NoMatch';
 import { Home } from './modules/components/Home';
 import { Chat, Chats } from './modules/components/Chat';
+import { Contact } from './modules/components/Contacts';
 
 const App = () => {
   return (
@@ -13,6 +14,7 @@ const App = () => {
       <Route path='/user' element={<User />} />
       <Route path='/chat' element={<Chat />} />
       <Route path='/chats' element={<Chats />} />
+      <Route path='/contacts' element={<Contact />} />
       <Route path='*' element={<NoMatch />} />
     </Routes>
   );

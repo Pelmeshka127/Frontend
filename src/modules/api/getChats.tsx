@@ -5,8 +5,8 @@ const getAllMyChats = async() => {
 }
 
 const getAllChatMembers = async () => {
-    const response = await fetch("/api/chat_member/all");
-    return await response.json();
-  };
+    const response = await fetch("/api/chat_member/all")
+    return await response.json()
+  }
 
 export { getAllMyChats, getAllChatMembers }

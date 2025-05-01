@@ -25,6 +25,9 @@ const Home = () => {
         <Link to="/chats" className="nav-button">
           Чаты
         </Link>
+        <Link to="/contacts" className="nav-button">
+          Контакты
+        </Link>
       </nav>
     </div>
   );
