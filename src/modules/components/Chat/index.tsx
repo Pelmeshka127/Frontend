@@ -1,3 +1,4 @@
-import Chat from "./Chat";
+import { Chats } from "./Chats";
+import { Chat } from "./Chat";
 
-export { Chat }
+export { Chat, Chats }
