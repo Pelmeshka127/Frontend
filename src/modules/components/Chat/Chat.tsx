@@ -17,8 +17,8 @@ const Chat = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [searchParams] = useSearchParams();
     const companionId = searchParams.get("id") ? +searchParams.get("id")! : 0;
-    const chatId = 26;
     const queryClient = useQueryClient();
+    const chatId: number = parseInt(searchParams.get("chatId") || "");
 
     const { data: currentUser } = useQuery({
         queryKey: ['currentUser'],
@@ -103,6 +103,10 @@ const Chat = () => {
             date: date.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })
         };
     };
+
+    if (!chatId) {
+        return <div className="error-message">Чат не найден</div>;
+    }
 
     if (!currentUser || !companion) {
         return <div className="error-message">Ошибка загрузки данных</div>;

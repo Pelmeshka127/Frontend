@@ -4,4 +4,9 @@ const getAllMyChats = async() => {
     return chats
 }
 
-export { getAllMyChats }
+const getAllChatMembers = async () => {
+    const response = await fetch("/api/chat_member/all");
+    return await response.json();
+  };
+
+export { getAllMyChats, getAllChatMembers }
