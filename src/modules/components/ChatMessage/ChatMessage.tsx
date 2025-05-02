@@ -1,4 +1,4 @@
-import { Avatar, Box, Group, Text, Paper, Stack, useMantineTheme, Title } from '@mantine/core';
+import { Avatar, Box, Group, Text, Paper, Stack, useMantineTheme, Title, Divider } from '@mantine/core';
 
 import defaultProfilePicture from '../../../assets/default_profile_picture.png';
 
@@ -53,6 +53,8 @@ export function ChatMessage({ avatar, nickname, message, time, date, isCurrentUs
             </Text>
           </Group>
           
+            <Divider/>
+
           <Text 
             size="sm"
             style={{
