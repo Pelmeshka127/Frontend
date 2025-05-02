@@ -48,28 +48,24 @@ const Home = () => {
   const theme = useMantineTheme()
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Fetch current user data
   const { data: currentUser, isLoading: isLoadingUser } = useQuery<User>({
     queryKey: ["currentUser"],
     queryFn: getCurrentUser,
     staleTime: Number.POSITIVE_INFINITY,
   })
 
-  // Fetch user's chats
   const { data: myChats = [], isLoading: isLoadingChats } = useQuery<ChatMember[]>({
     queryKey: ["myChats"],
     queryFn: getAllMyChats,
     enabled: !!currentUser,
   })
 
-  // Fetch all chat members
   const { data: allChatMembers = [], isLoading: isLoadingMembers } = useQuery<ChatMember[]>({
     queryKey: ["allChatMembers"],
     queryFn: getAllChatMembers,
     enabled: !!currentUser,
   })
 
-  // Fetch companions for each chat
   const companionRequests = useQueries({
     queries:
       currentUser && allChatMembers.length > 0
@@ -85,7 +81,6 @@ const Home = () => {
         : [],
   })
 
-  // Process companion data
   const companions: ChatWithCompanion[] = companionRequests
     .map((result, idx) => {
       if (result.isSuccess && idx < myChats.length) {
@@ -98,7 +93,6 @@ const Home = () => {
     })
     .filter((c): c is ChatWithCompanion => !!c)
 
-  // Filter chats based on search query
   const filteredChats = companions.filter((chat) => {
     if (!searchQuery) return true
     const query = searchQuery.toLowerCase()
