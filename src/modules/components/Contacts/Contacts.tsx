@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { getAllContacts, createContact } from "../../api/getContacts";
 import { getCurrentUser, getUserById } from "../../api/getUser";
-import { getAllChatMembers, getAllMyChats } from "../../api/getChats";
+import { getAllChatMembers, getAllMyChats, createChat } from "../../api/getChats";
 import { Link } from "react-router-dom";
 
 interface Contact {
@@ -102,6 +102,14 @@ const Contact = () => {
     }
   };
 
+  const createChatMutation = useMutation({
+    mutationFn: createChat,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myChats"] });
+      queryClient.invalidateQueries({ queryKey: ["allChatMembers"] });
+    },
+  });
+
   return (
     <div>
       <div>
@@ -110,7 +118,7 @@ const Contact = () => {
           type="text"
           value={newContactNickname}
           onChange={(e) => setNewContactNickname(e.target.value)}
-          placeholder="Никнейм нового контакта"
+          placeholder="Введите никнейм"
         />
         <button onClick={handleAddContact}>Добавить</button>
         {addError && <p style={{ color: "red" }}>{addError}</p>}
@@ -122,7 +130,7 @@ const Contact = () => {
         type="text"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Поиск по нику"
+        placeholder="Поиск по никнейму"
       />
 
       {filteredUsers.length === 0 ? (
@@ -137,7 +145,12 @@ const Contact = () => {
                 {chatId ? (
                   <Link to={`/chat?id=${user.userId}&chatId=${chatId}`}>Перейти в чат</Link>
                 ) : (
-                  <span> (чата нет)</span>
+                  <button
+                    onClick={() =>
+                      createChatMutation.mutate({ members: [user.userId] })
+                    }
+                  >Создать чат
+                  </button>
                 )}
               </li>
             );

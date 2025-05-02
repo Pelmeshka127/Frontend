@@ -16,7 +16,7 @@ const Home = () => {
   return (
     <div className="home-container">
       <div className="content">
-          <h1>Добро пожаловать в Мессенджер!</h1>
+        <h1>Добро пожаловать в Мессенджер!</h1>
       </div>
       <nav className="top-nav">
         <Link to={`/user?id=${user?.userId}`} className="nav-button">
