@@ -142,7 +142,6 @@ const Chat = () => {
                 ) : (
                     messages.map((message) => {
                         const isCurrentUser = message.senderId === currentUser.userId;
-                        const sender = isCurrentUser ? currentUser : companion;
                         const { time, date } = formatDateTime(message.sendDttm);
                         const senderNickname = isCurrentUser ? currentUser.nickname : companion.nickname
                         

@@ -1,4 +1,4 @@
-import { Avatar, Box, Group, Text, Paper, Stack, useMantineTheme, Title, Divider } from '@mantine/core';
+import { Avatar, Box, Group, Text, Paper, Stack, Title, Divider } from '@mantine/core';
 
 import defaultProfilePicture from '../../../assets/default_profile_picture.png';
 
@@ -12,7 +12,6 @@ interface MessageProps {
 }
 
 export function ChatMessage({ avatar, nickname, message, time, date, isCurrentUser }: MessageProps) {
-  const theme = useMantineTheme();
   
   return (
     <Box
