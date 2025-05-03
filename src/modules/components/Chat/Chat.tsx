@@ -5,6 +5,9 @@ import { getUserById, getCurrentUser } from '../../api/getUser';
 import { getMessages, sendMessage } from '../../api/getMessage';
 import defaultProfilePicture from '../../../assets/default_profile_picture.png';
 
+import { ScrollArea, Avatar, Group, Divider, Stack, Box, Button, Textarea } from '@mantine/core';
+import { ChatMessage } from '../ChatMessage';
+
 interface Message {
     messageId: number;
     senderId: number;
@@ -117,23 +120,21 @@ const Chat = () => {
     }
 
     return (
-        <div className="chat-container">
-            <div className="chat-header">
-                <img
+        <Stack className="chat-container">
+            <Group className="chat-header">
+                <Avatar
                     src={companion.profilePictureLink}
-                    alt={companion.nickname}
-                    className="avatar"
-                    onError={(e) => {
-                        e.currentTarget.src = defaultProfilePicture;
-                    }}
+                    alt={defaultProfilePicture}
                 />
-                <div className="header-info">
-                    <h2>{companion.nickname}</h2>
-                    <p>Диалог с {companion.nickname}</p>
-                </div>
-            </div>
 
-            <div className="messages-container">
+                <div className="header-info">
+                    <h3>Chat with {companion.nickname}</h3>
+                </div>
+            </Group>
+
+            <Divider/>
+            
+            <ScrollArea className="messages-container" w="100vh" h="50vh">
                 {loadingMessages && messages.length === 0 ? (
                     <div className="loading-message">Загрузка сообщений...</div>
                 ) : messages.length === 0 ? (
@@ -143,46 +144,45 @@ const Chat = () => {
                         const isCurrentUser = message.senderId === currentUser.userId;
                         const sender = isCurrentUser ? currentUser : companion;
                         const { time, date } = formatDateTime(message.sendDttm);
-
+                        const senderNickname = isCurrentUser ? currentUser.nickname : companion.nickname
+                        
                         return (
-                            <div
-                                key={message.messageId}
-                                className={`message-container ${isCurrentUser ? 'current-user' : 'companion'}`}
-                            >
-                                <div className="message-header">
-                                    <div className="sender-info">
-                                        <span className="sender-name">{sender.nickname}</span>
-                                        <span className="message-time">{time} • {date}</span>
-                                    </div>
-                                </div>
-                                <div className="message-content">
-                                    <p className="message-text">{message.content}</p>
-                                </div>
-                            </div>
-                        );
+                            <ChatMessage
+                                avatar={companion.profilePictureLink}
+                                nickname={senderNickname}
+                                message={message.content}
+                                time={time}
+                                date={date}
+                                isCurrentUser={isCurrentUser}
+                            />
+                        )
                     })
                 )}
                 <div ref={messagesEndRef} />
-            </div>
+            </ScrollArea>
 
-            <form onSubmit={handleSendMessage} className="message-form">
-                <input
-                    type="text"
+            <Box component='form' onSubmit={handleSendMessage}>
+                <Group>
+                <Textarea
+                    w="80%"
+                   // type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Введите сообщение..."
+                    placeholder="Your message"
                     className="message-input"
                     disabled={messageMutation.isPending}
                 />
-                <button 
+        
+                <Button
                     type="submit" 
                     className="send-button"
                     disabled={!newMessage.trim() || messageMutation.isPending}
                 >
-                    {messageMutation.isPending ? 'Отправка...' : 'Отправить'}
-                </button>
-            </form>
-        </div>
+                    {messageMutation.isPending ? 'Sending...' : 'Send'}
+                </Button>
+                </Group>
+        </Box>
+        </Stack>
     );
 };
 

@@ -7,16 +7,21 @@ import { Home } from './modules/components/Home';
 import { Chat, Chats } from './modules/components/Chat';
 import { Contact } from './modules/components/Contacts';
 
+import '@mantine/core/styles.css';
+import { MantineProvider } from '@mantine/core';
+
 const App = () => {
   return (
-    <Routes>
-      <Route path='/' element={<Home />} />
-      <Route path='/user' element={<User />} />
-      <Route path='/chat' element={<Chat />} />
-      <Route path='/chats' element={<Chats />} />
-      <Route path='/contacts' element={<Contact />} />
-      <Route path='*' element={<NoMatch />} />
-    </Routes>
+    <MantineProvider>
+        <Routes>
+            <Route path='/' element={<Home />} />
+        <Route path='/user' element={<User />} />
+        <Route path='/chat' element={<Chat />} />
+        <Route path='/chats' element={<Chats />} />
+        <Route path='/contacts' element={<Contact />} />
+        <Route path='*' element={<NoMatch />} />
+        </Routes>
+    </MantineProvider>
   );
 };
 
