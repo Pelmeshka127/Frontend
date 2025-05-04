@@ -1,5 +1,7 @@
 # Frontend
 
+This is our frontend
+
 To run project
 ```
 npm install
