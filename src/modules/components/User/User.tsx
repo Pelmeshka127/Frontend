@@ -2,7 +2,9 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getUserById } from "../../api/getUser";
 import defaultProfilePicture from "../../../assets/default_profile_picture.png";
-import './user.css';
+//import './user.css';
+
+import { Avatar, Group, Text, Paper } from '@mantine/core';
 
 interface User {
   userId: number;
@@ -12,6 +14,7 @@ interface User {
   profilePictureLink: string;
   dateOfBirth: string;
   phone: string;
+  email: string
 }
 
 const User = () => {
@@ -46,45 +49,44 @@ const User = () => {
   const profilePicture = user.profilePictureLink || defaultProfilePicture;
 
   return (
-    <div className="profile-container">
-      <div className="profile-card">
-        <div className="profile-header">
-          <div className="avatar-wrapper">
-            <img
-              src={profilePicture}
-              alt={`${user.nickname}'s avatar`}
-              className="profile-avatar"
-              onError={(e) => {
-                e.currentTarget.src = defaultProfilePicture;
-              }}
-            />
-          </div>
+    <div>
+      <Paper withBorder={true}>
+      <Group wrap="nowrap">
+        <Avatar
+          src={profilePicture}
+          alt={defaultProfilePicture}
+          size={94}
+          radius="md"
+        />
+        <div>
+          <Text fz="xs" fw={700} c="dimmed">
+            @{user.nickname}
+          </Text>
 
-          <div className="profile-titles">
-            <h1 className="profile-username">@{user.nickname}</h1>
-            <h2 className="profile-name">
-              {user.firstname} {user.secondname}
-            </h2>
-          </div>
+          <Text fz="lg" fw={500}>
+          {user.firstname} {user.secondname}
+          </Text>
+
+          <Group wrap="nowrap" gap={10} mt={3}>
+            <Text fz="xs" c="dimmed">
+              Email: {user.email}
+            </Text>
+          </Group>
+
+          <Group wrap="nowrap" gap={10} mt={5}>
+            <Text fz="xs" c="dimmed">
+              Phone: {user.phone}
+            </Text>
+          </Group>
+
+          <Group wrap="nowrap" gap={10} mt={5}>
+            <Text fz="xs" c="dimmed">
+              Birthday: {user.dateOfBirth}
+            </Text>
+          </Group>
         </div>
-
-        <div className="profile-details">
-          <div className="detail-item">
-            <span className="detail-label">Birthday: </span>
-            <span className="detail-value">{user.dateOfBirth}</span>
-          </div>
-
-          <div className="detail-item">
-            <span className="detail-label">ID:</span>
-            <span className="detail-value">#{user.userId}</span>
-          </div>
-
-          <div className="detail-item">
-            <span className="detail-label">Phone:</span>
-            <span className="detail-value">{user.phone}</span>
-          </div>
-        </div>
-      </div>
+      </Group>
+      </Paper>
     </div>
   );
 };
