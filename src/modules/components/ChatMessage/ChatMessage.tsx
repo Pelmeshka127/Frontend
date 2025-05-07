@@ -1,9 +1,7 @@
-import { Avatar, Box, Group, Text, Paper, Stack, useMantineTheme, Title, Divider } from '@mantine/core';
-
-import defaultProfilePicture from '../../../assets/default_profile_picture.png';
+import { Box, Text, Stack, Paper, Group, Flex, useMantineTheme } from '@mantine/core';
 
 interface MessageProps {
-  avatar: string;
+  avatar?: string;
   nickname: string;
   message: string;
   time: string;
@@ -11,59 +9,42 @@ interface MessageProps {
   isCurrentUser: boolean;
 }
 
-export function ChatMessage({ avatar, nickname, message, time, date, isCurrentUser }: MessageProps) {
+export function ChatMessage({ nickname, message, time, date, isCurrentUser }: MessageProps) {
   const theme = useMantineTheme();
-  
+
   return (
     <Box
+      mx="md"
+      mb="sm"
       style={{
         display: 'flex',
         justifyContent: isCurrentUser ? 'flex-end' : 'flex-start',
-        marginBottom: 'md',
       }}
     >
       <Paper
-        withBorder={true}
         p="sm"
         radius="md"
         shadow="sm"
-        style={{
-          maxWidth: '90%'
-        }}
+        withBorder
+        maw="80%"
+        bg={isCurrentUser ? theme.colors.cyan[6] : theme.colors.gray[1]}
       >
-        <Stack>
-          <Group>
-            {!isCurrentUser && (
-              <Avatar 
-                src={avatar} 
-                size="sm" 
-                radius="xl" 
-                alt={defaultProfilePicture}
-              />
-            )}
-            
-            <Title
-                order={5}
-            >
-              {nickname}
-            </Title>
-            
-            <Text size="xs" >
-                {time} • {date}
-            </Text>
-          </Group>
-          
-            <Divider/>
-
-          <Text 
+        <Stack gap={2} style={{ textAlign: 'left' }}>
+          <Text
             size="sm"
-            style={{
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}
+            style={{ wordBreak: 'break-word' }}
+            c={isCurrentUser ? 'white' : undefined}
           >
             {message}
           </Text>
+
+
+          <Flex justify="flex-end">
+            <Text size="xs" c={isCurrentUser ? 'white' : 'dimmed'}>
+              {time} • {date}
+            </Text>
+          </Flex>
+        
         </Stack>
       </Paper>
     </Box>

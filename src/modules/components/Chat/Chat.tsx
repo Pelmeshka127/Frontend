@@ -5,7 +5,7 @@ import { getUserById, getCurrentUser } from '../../api/getUser';
 import { getMessages, sendMessage } from '../../api/getMessage';
 import defaultProfilePicture from '../../../assets/default_profile_picture.png';
 
-import { ScrollArea, Avatar, Group, Divider, Stack, Box, Button, Textarea } from '@mantine/core';
+import { ScrollArea, Avatar, Group, Divider, Stack, Box, Button, Textarea, Flex } from '@mantine/core';
 import { ChatMessage } from '../ChatMessage';
 
 interface Message {
@@ -99,6 +99,14 @@ const Chat = () => {
         messageMutation.mutate(newMessage);
     };
 
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Предотвращаем перенос строки
+            handleSendMessage(e);
+        }
+    };
+
     const formatDateTime = (dateString: string) => {
         const date = new Date(dateString);
         return {
@@ -128,13 +136,13 @@ const Chat = () => {
                 />
 
                 <div className="header-info">
-                    <h3>Chat with {companion.nickname}</h3>
+                    <h3>{companion.nickname}</h3>
                 </div>
             </Group>
 
             <Divider/>
             
-            <ScrollArea className="messages-container" w="100vh" h="50vh">
+            <ScrollArea className="messages-container" w="100vh" h="65vh">
                 {loadingMessages && messages.length === 0 ? (
                     <div className="loading-message">Загрузка сообщений...</div>
                 ) : messages.length === 0 ? (
@@ -162,12 +170,12 @@ const Chat = () => {
             </ScrollArea>
 
             <Box component='form' onSubmit={handleSendMessage}>
-                <Group>
+            <Box style={{ display: 'flex', gap: '8px', width: '100%' }}>
                 <Textarea
-                    w="80%"
-                   // type="text"
+                    style={{ flex: 1 }}
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder="Your message"
                     className="message-input"
                     disabled={messageMutation.isPending}
@@ -180,7 +188,7 @@ const Chat = () => {
                 >
                     {messageMutation.isPending ? 'Sending...' : 'Send'}
                 </Button>
-                </Group>
+                </Box>
         </Box>
         </Stack>
     );
