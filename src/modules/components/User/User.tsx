@@ -5,6 +5,7 @@ import defaultProfilePicture from "../../../assets/default_profile_picture.png";
 //import './user.css';
 
 import { Avatar, Group, Text, Paper } from '@mantine/core';
+import { IconAt, IconPhoneCall, IconCake } from '@tabler/icons-react';
 
 interface User {
   userId: number;
@@ -50,7 +51,7 @@ const User = () => {
 
   return (
     <div>
-      <Paper withBorder={true}>
+      <Paper withBorder={true} p={"md"}>
       <Group wrap="nowrap">
         <Avatar
           src={profilePicture}
@@ -68,20 +69,23 @@ const User = () => {
           </Text>
 
           <Group wrap="nowrap" gap={10} mt={3}>
+            <IconAt stroke={1.5} size={16}/>
             <Text fz="xs" c="dimmed">
-              Email: {user.email}
+              {user.email}
             </Text>
           </Group>
 
           <Group wrap="nowrap" gap={10} mt={5}>
+            <IconPhoneCall stroke={1.5} size={16} />
             <Text fz="xs" c="dimmed">
-              Phone: {user.phone}
+              {user.phone}
             </Text>
           </Group>
 
           <Group wrap="nowrap" gap={10} mt={5}>
+            <IconCake stroke={1.5} size={16}/>
             <Text fz="xs" c="dimmed">
-              Birthday: {user.dateOfBirth}
+              {user.dateOfBirth}
             </Text>
           </Group>
         </div>
