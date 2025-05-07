@@ -1,4 +1,4 @@
-import { Box, Text, Stack, Paper, Group, Flex, useMantineTheme } from '@mantine/core';
+import { Box, Text, Stack, Paper, Flex, useMantineTheme } from '@mantine/core';
 
 interface MessageProps {
   avatar?: string;
@@ -9,7 +9,7 @@ interface MessageProps {
   isCurrentUser: boolean;
 }
 
-export function ChatMessage({ nickname, message, time, date, isCurrentUser }: MessageProps) {
+export function ChatMessage({ message, time, date, isCurrentUser }: MessageProps) {
   const theme = useMantineTheme();
 
   return (

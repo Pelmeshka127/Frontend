@@ -5,7 +5,7 @@ import { getUserById, getCurrentUser } from '../../api/getUser';
 import { getMessages, sendMessage } from '../../api/getMessage';
 import defaultProfilePicture from '../../../assets/default_profile_picture.png';
 
-import { ScrollArea, Avatar, Group, Divider, Stack, Box, Button, Textarea, Flex } from '@mantine/core';
+import { ScrollArea, Avatar, Group, Divider, Stack, Box, Button, Textarea } from '@mantine/core';
 import { ChatMessage } from '../ChatMessage';
 
 interface Message {
@@ -150,7 +150,6 @@ const Chat = () => {
                 ) : (
                     messages.map((message) => {
                         const isCurrentUser = message.senderId === currentUser.userId;
-                        const sender = isCurrentUser ? currentUser : companion;
                         const { time, date } = formatDateTime(message.sendDttm);
                         const senderNickname = isCurrentUser ? currentUser.nickname : companion.nickname
                         
