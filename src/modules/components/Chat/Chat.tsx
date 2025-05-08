@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserById, getCurrentUser } from '../../api/getUser';
 import { getMessages, sendMessage } from '../../api/getMessage';
@@ -15,13 +14,15 @@ interface Message {
     sendDttm: string;
 }
 
-const Chat = () => {
+interface ChatProps {
+  chatId: number;
+  companionId: number;
+}
+
+const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [searchParams] = useSearchParams();
-    const companionId = searchParams.get("id") ? +searchParams.get("id")! : 0;
     const queryClient = useQueryClient();
-    const chatId: number = parseInt(searchParams.get("chatId") || "");
 
     const { data: currentUser } = useQuery({
         queryKey: ['currentUser'],
@@ -99,10 +100,9 @@ const Chat = () => {
         messageMutation.mutate(newMessage);
     };
 
-
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault(); // Предотвращаем перенос строки
+            e.preventDefault();
             handleSendMessage(e);
         }
     };
@@ -193,4 +193,4 @@ const Chat = () => {
     );
 };
 
-export { Chat }
+export { Chat };

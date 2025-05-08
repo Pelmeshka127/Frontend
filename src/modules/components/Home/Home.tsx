@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { getCurrentUser, getUserById } from "../../api/getUser";
 import { getAllMyChats, getAllChatMembers } from "../../api/getChats";
@@ -14,10 +14,10 @@ import {
   Text,
   useMantineTheme,
   Loader,
-  NavLink,
   ScrollArea,
   Tabs,
   UnstyledButton,
+  ActionIcon,
 } from "@mantine/core";
 import {
   IconSearch,
@@ -29,6 +29,7 @@ import {
 } from "@tabler/icons-react";
 import defaultProfilePicture from "../../../assets/default_profile_picture.png";
 import classes from "./Navbar.module.css";
+import { Chat } from "../Chat";
 
 interface ChatMember {
   chatId: number;
@@ -55,6 +56,7 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "chats";
+  const [selectedChat, setSelectedChat] = useState<{ chatId: number; companionId: number } | null>(null);
 
   const { data: currentUser, isLoading: isLoadingUser } = useQuery<User>({
     queryKey: ["currentUser"],
@@ -123,41 +125,54 @@ const Home = () => {
     setSearchParams({ tab });
   };
 
+  const handleChatSelect = (chatId: number, companionId: number) => {
+    setSelectedChat({ chatId, companionId });
+  };
+
   return (
     <AppShell
       padding="md"
+      header={{ height: 70 }} 
       navbar={{
-        width: 300,
+        width: 350,
         breakpoint: "sm",
         collapsed: { mobile: false },
       }}
     >
-      {/* Боковая панель с контактами */}
-      <AppShell.Navbar p="md" bg="blue.8">
-        <AppShell.Section>
-          <Group mb="md" className={classes.header}>
+      <AppShell.Header px="md">
+        <Group h="100%" justify="space-between">
+          <Group>
             <Avatar
               src={currentUser?.profilePictureLink || defaultProfilePicture}
-              size="md"
+              size="lg" 
               radius="xl"
             />
             <Box>
-              <Text fw={500} c="white">
+              <Text fw={500} size="md"> 
                 {currentUser?.firstname || currentUser?.nickname || "Пользователь"}{" "}
                 {currentUser?.secondname || ""}
               </Text>
-              <Text size="xs" c="blue.2">
+              <Text size="sm" c="dimmed"> 
                 @{currentUser?.nickname || "nickname"}
               </Text>
             </Box>
           </Group>
+          <ActionIcon variant="transparent" size="xl"> 
+            <IconSettings size={44} /> 
+          </ActionIcon>
+        </Group>
+      </AppShell.Header>
+
+      <AppShell.Navbar p="md" bg="blue.8">
+        <AppShell.Section>
           <Input
             placeholder="Поиск"
-            leftSection={<IconSearch size={16} color="white" />}
+            leftSection={<IconSearch size={18} color="white" />}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.currentTarget.value)}
             mb="md"
             className={classes.searchInput}
+            size="md" 
           />
         </AppShell.Section>
 
@@ -170,17 +185,17 @@ const Home = () => {
             <Tabs.List grow>
               <Tabs.Tab 
                 value="chats" 
-                leftSection={<IconMessages size={16} />}
+                leftSection={<IconMessages size={18} />}
                 className={classes.tab}
               >
-                Чаты
+                <Text size="md">Чаты</Text> 
               </Tabs.Tab>
               <Tabs.Tab 
                 value="contacts" 
-                leftSection={<IconUsers size={16} />}
+                leftSection={<IconUsers size={18} />}
                 className={classes.tab}
               >
-                Контакты
+                <Text size="md">Контакты</Text> 
               </Tabs.Tab>
             </Tabs.List>
           </Tabs>
@@ -189,11 +204,11 @@ const Home = () => {
         <AppShell.Section grow my="md" component={ScrollArea}>
           {isLoading ? (
             <Flex justify="center" align="center" p="xl">
-              <Loader color="white" />
+              <Loader color="white" size="lg" /> 
             </Flex>
           ) : activeTab === "chats" ? (
             filteredChats.length === 0 ? (
-              <Text p="md" c="white">
+              <Text p="md" c="white" size="md"> 
                 {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
               </Text>
             ) : (
@@ -201,64 +216,59 @@ const Home = () => {
                 <UnstyledButton
                   key={chatId}
                   className={classes.link}
-                  component={Link}
-                  to={`/chat?id=${companion.userId}&chatId=${chatId}`}
+                  onClick={() => handleChatSelect(chatId, companion.userId)} 
+                  py="sm" 
                 >
                   <Group>
                     <Avatar
                       src={companion.profilePictureLink || defaultProfilePicture}
-                      size="sm"
+                      size="md" 
                       radius="xl"
                     />
                     <Box style={{ flex: 1 }}>
-                      <Text size="sm" fw={500} c="white">
+                      <Text size="md" fw={500} c="white"> 
                         {companion.nickname}
                       </Text>
-                      <Text size="xs" c="blue.3">
+                      <Text size="sm" c="blue.3"> 
                         {companion.firstname && companion.secondname
                           ? `${companion.firstname} ${companion.secondname}`
                           : companion.nickname}
                       </Text>
                     </Box>
-                    <IconChevronRight size={14} color="white" />
+                    <IconChevronRight size={16} color="white" /> 
                   </Group>
                 </UnstyledButton>
               ))
             )
           ) : (
-            <Text p="md" c="white">
-              Список контактов будет здесь
+            <Text p="md" c="white" size="md">
+              Список контактов
             </Text>
           )}
         </AppShell.Section>
-
-        <AppShell.Section className={classes.footer}>
-          <NavLink
-            label="Настройки"
-            leftSection={<IconSettings size={20} color="white" />}
-            component={Link}
-            to="/settings"
-            className={classes.link}
-            c="white"
-          />
-        </AppShell.Section>
       </AppShell.Navbar>
 
-      {/* Основное содержимое - заглушка для выбора чата */}
-      <AppShell.Main>
+      <AppShell.Main pt="70px"> 
         <Container size="lg" p={0} h="100%">
-          <Flex
-            h="100%"
-            justify="center"
-            align="center"
-            direction="column"
-            c="dimmed"
-          >
-            <IconMessage size={48} stroke={1.5} />
-            <Text size="lg" mt="md">
-              Выберите чат для начала общения
-            </Text>
-          </Flex>
+          {selectedChat ? (
+            <Chat 
+              chatId={selectedChat.chatId} 
+              companionId={selectedChat.companionId} 
+            />
+          ) : (
+            <Flex
+              h="100%"
+              justify="center"
+              align="center"
+              direction="column"
+              c="dimmed"
+            >
+              <IconMessage size={48} stroke={1.5} />
+              <Text size="lg" mt="md">
+                Выберите чат для начала общения
+              </Text>
+            </Flex>
+          )}
         </Container>
       </AppShell.Main>
     </AppShell>
