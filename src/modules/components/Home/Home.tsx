@@ -16,7 +16,6 @@ import {
   Loader,
   NavLink,
   ScrollArea,
-  Divider,
   Tabs,
   UnstyledButton,
 } from "@mantine/core";
