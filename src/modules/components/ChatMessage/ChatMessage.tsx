@@ -7,6 +7,7 @@ interface MessageProps {
   time: string;
   date: string;
   isCurrentUser: boolean;
+  isActive: boolean
 }
 
 export function ChatMessage({ message, time, date, isCurrentUser }: MessageProps) {

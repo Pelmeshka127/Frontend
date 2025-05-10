@@ -30,6 +30,7 @@ import {
 import defaultProfilePicture from "../../../assets/default_profile_picture.png";
 import classes from "./Navbar.module.css";
 import { Chat } from "../Chat";
+import { UserModal } from "../UserModal";
 
 interface ChatMember {
   chatId: number;
@@ -44,6 +45,7 @@ interface User {
   firstname?: string;
   secondname?: string;
   profilePictureLink?: string;
+  active: boolean
 }
 
 interface ChatWithCompanion {
@@ -142,11 +144,7 @@ const Home = () => {
       <AppShell.Header px="md">
         <Group h="100%" justify="space-between">
           <Group>
-            <Avatar
-              src={currentUser?.profilePictureLink || defaultProfilePicture}
-              size="lg" 
-              radius="xl"
-            />
+            <UserModal otherUser={currentUser} currentUser={currentUser}/>
             <Box>
               <Text fw={500} size="md"> 
                 {currentUser?.firstname || currentUser?.nickname || "Пользователь"}{" "}
