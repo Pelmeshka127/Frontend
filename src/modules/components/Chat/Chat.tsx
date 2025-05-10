@@ -7,6 +7,7 @@ import defaultProfilePicture from '../../../assets/default_profile_picture.png';
 
 import { ScrollArea, Avatar, Group, Divider, Stack, Box, Button, Textarea } from '@mantine/core';
 import { ChatMessage } from '../ChatMessage';
+import { UserModal } from '../UserModal';
 
 interface Message {
     messageId: number;
@@ -122,10 +123,8 @@ const Chat = () => {
     return (
         <Stack className="chat-container">
             <Group className="chat-header">
-                <Avatar
-                    src={companion.profilePictureLink}
-                    alt={defaultProfilePicture}
-                />
+  
+                <UserModal user = {companion}/>
 
                 <div className="header-info">
                     <h3>Chat with {companion.nickname}</h3>

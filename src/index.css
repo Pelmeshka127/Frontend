@@ -24,8 +24,10 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  /* Had to comment it to get modal to work, see https://stackoverflow.com/questions/75654933/mantine-modal-not-showing*/
+  /*display: flex;*/
+  /*Conflicts with modal centering*/
+  /*place-items: center;*/
   min-width: 320px;
   min-height: 100vh;
 }
