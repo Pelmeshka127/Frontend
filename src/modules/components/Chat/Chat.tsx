@@ -4,8 +4,9 @@ import { getUserById, getCurrentUser } from '../../api/getUser';
 import { getMessages, sendMessage } from '../../api/getMessage';
 import defaultProfilePicture from '../../../assets/default_profile_picture.png';
 
-import { ScrollArea, Avatar, Group, Divider, Stack, Box, Button, Textarea } from '@mantine/core';
+import { ScrollArea, Group, Divider, Stack, Box, Button, Textarea } from '@mantine/core';
 import { ChatMessage } from '../ChatMessage';
+import { UserModal } from '../UserModal';
 
 interface Message {
     messageId: number;
@@ -130,10 +131,8 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
     return (
         <Stack className="chat-container">
             <Group className="chat-header">
-                <Avatar
-                    src={companion.profilePictureLink}
-                    alt={defaultProfilePicture}
-                />
+  
+                <UserModal otherUser = {companion} currentUser={currentUser}/>
 
                 <div className="header-info">
                     <h3>{companion.nickname}</h3>
@@ -161,6 +160,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
                                 time={time}
                                 date={date}
                                 isCurrentUser={isCurrentUser}
+                                isActive={companion.isActive}
                             />
                         )
                     })

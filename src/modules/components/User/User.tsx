@@ -15,6 +15,7 @@ interface User {
   dateOfBirth: string;
   phone: string;
   email: string
+  active: boolean
 }
 
 const User = () => {
