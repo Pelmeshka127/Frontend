@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserById, getCurrentUser } from '../../api/getUser';
 import { getMessages, sendMessage } from '../../api/getMessage';
@@ -16,13 +15,15 @@ interface Message {
     sendDttm: string;
 }
 
-const Chat = () => {
+interface ChatProps {
+  chatId: number;
+  companionId: number;
+}
+
+const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [searchParams] = useSearchParams();
-    const companionId = searchParams.get("id") ? +searchParams.get("id")! : 0;
     const queryClient = useQueryClient();
-    const chatId: number = parseInt(searchParams.get("chatId") || "");
 
     const { data: currentUser } = useQuery({
         queryKey: ['currentUser'],
@@ -100,6 +101,13 @@ const Chat = () => {
         messageMutation.mutate(newMessage);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage(e);
+        }
+    };
+
     const formatDateTime = (dateString: string) => {
         const date = new Date(dateString);
         return {
@@ -127,13 +135,13 @@ const Chat = () => {
                 <UserModal user = {companion}/>
 
                 <div className="header-info">
-                    <h3>Chat with {companion.nickname}</h3>
+                    <h3>{companion.nickname}</h3>
                 </div>
             </Group>
 
             <Divider/>
             
-            <ScrollArea className="messages-container" w="100vh" h="50vh">
+            <ScrollArea className="messages-container" w="100vh" h="65vh">
                 {loadingMessages && messages.length === 0 ? (
                     <div className="loading-message">Загрузка сообщений...</div>
                 ) : messages.length === 0 ? (
@@ -141,7 +149,6 @@ const Chat = () => {
                 ) : (
                     messages.map((message) => {
                         const isCurrentUser = message.senderId === currentUser.userId;
-                        const sender = isCurrentUser ? currentUser : companion;
                         const { time, date } = formatDateTime(message.sendDttm);
                         const senderNickname = isCurrentUser ? currentUser.nickname : companion.nickname
                         
@@ -161,12 +168,12 @@ const Chat = () => {
             </ScrollArea>
 
             <Box component='form' onSubmit={handleSendMessage}>
-                <Group>
+            <Box style={{ display: 'flex', gap: '8px', width: '100%' }}>
                 <Textarea
-                    w="80%"
-                   // type="text"
+                    style={{ flex: 1 }}
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder="Your message"
                     className="message-input"
                     disabled={messageMutation.isPending}
@@ -179,10 +186,10 @@ const Chat = () => {
                 >
                     {messageMutation.isPending ? 'Sending...' : 'Send'}
                 </Button>
-                </Group>
+                </Box>
         </Box>
         </Stack>
     );
 };
 
-export { Chat }
+export { Chat };

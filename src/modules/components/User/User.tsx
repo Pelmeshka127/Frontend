@@ -2,7 +2,6 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getUserById } from "../../api/getUser";
 import defaultProfilePicture from "../../../assets/default_profile_picture.png";
-//import './user.css';
 
 import { Avatar, Group, Text, Paper } from '@mantine/core';
 import { IconAt, IconPhoneCall, IconCake } from '@tabler/icons-react';
