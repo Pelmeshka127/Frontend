@@ -30,7 +30,7 @@ export function UserModal({ otherUser, currentUser }: UserModalProps) {
         <Card radius="md" p="md">
           <Card.Section>
             <Group wrap="nowrap" align="flex-start" gap="sm">
-              <Avatar size="xl" src={otherUser.profilePictureLink} alt={defaultProfilePicture} />
+              {/* <Avatar size="xl" src={otherUser.profilePictureLink} alt={defaultProfilePicture} /> */}
               
               <Stack gap={2} mt={-2}>
                 <Text fz="lg" fw={500} lh={1.2}>
