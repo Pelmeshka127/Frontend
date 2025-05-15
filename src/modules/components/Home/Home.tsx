@@ -1,11 +1,9 @@
-"use client"
-
-import { useState } from "react"
-import { useSearchParams } from "react-router-dom"
-import { useQuery, useQueries } from "@tanstack/react-query"
-import { getCurrentUser, getUserById } from "../../api/getUser"
-import { getAllMyChats, getAllChatMembers } from "../../api/getChats"
-import { getAllContacts } from "../../api/getContacts"
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useQuery, useQueries } from "@tanstack/react-query";
+import { getCurrentUser, getUserById } from "../../api/getUser";
+import { getAllMyChats, getAllChatMembers } from "../../api/getChats";
+import { getAllContacts } from "../../api/getContacts";
 import {
   AppShell,
   Avatar,
@@ -18,10 +16,11 @@ import {
   useMantineTheme,
   Loader,
   ScrollArea,
-  Tabs,
   UnstyledButton,
   ActionIcon,
-} from "@mantine/core"
+  NavLink,
+  Stack,
+} from "@mantine/core";
 import {
   IconSearch,
   IconSettings,
@@ -29,10 +28,10 @@ import {
   IconChevronRight,
   IconUsers,
   IconMessages,
-} from "@tabler/icons-react"
-import defaultProfilePicture from "../../../assets/default_profile_picture.png"
-import classes from "./Navbar.module.css"
-import { Chat } from "../Chat"
+} from "@tabler/icons-react";
+import defaultProfilePicture from "../../../assets/default_profile_picture.png";
+import classes from "./Navbar.module.css";
+import { Chat } from "../Chat";
 
 interface ChatMember {
   chatId: number
@@ -189,7 +188,7 @@ const Home = () => {
       padding="md"
       header={{ height: 70 }}
       navbar={{
-        width: 350,
+        width: 430, // Увеличиваем ширину для двух колонок
         breakpoint: "sm",
         collapsed: { mobile: false },
       }}
@@ -213,110 +212,132 @@ const Home = () => {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="md" bg="blue.8">
-        <AppShell.Section>
-          <Input
-            placeholder="Поиск"
-            leftSection={<IconSearch size={18} color="white" />}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.currentTarget.value)}
-            mb="md"
-            className={classes.searchInput}
-            size="md"
-          />
-        </AppShell.Section>
+      <AppShell.Navbar p={0} bg="blue.8">
+        <Flex h="100%">
+          {/* Левая колонка с кнопками навигации */}
+          <Box w={80} h="100%" bg="blue.8">
+            <Stack gap={0} pt="md">
+              <NavLink
+                leftSection={<IconMessages size={24} color="white" />}
+                active={activeTab === "chats"}
+                onClick={() => handleTabChange("chats")}
+                variant="subtle"
+                style={{
+                  borderRadius: 0,
+                  borderLeft: activeTab === "chats" ? `4px solid ${theme.colors.blue[5]}` : "none",
+                  backgroundColor: activeTab === "chats" ? theme.colors.blue[7] : "transparent",
+                }}
+                c="white"
+              />
+              <NavLink
+                leftSection={<IconUsers size={24} color="white" />}
+                active={activeTab === "contacts"}
+                onClick={() => handleTabChange("contacts")}
+                variant="subtle"
+                style={{
+                  borderRadius: 0,
+                  borderLeft: activeTab === "contacts" ? `4px solid ${theme.colors.blue[5]}` : "none",
+                  backgroundColor: activeTab === "contacts" ? theme.colors.blue[7] : "transparent",
+                }}
+                c="white"
+              />
+            </Stack>
+          </Box>
 
-        <AppShell.Section>
-          <Tabs value={activeTab} onChange={handleTabChange} className={classes.tabs}>
-            <Tabs.List grow>
-              <Tabs.Tab value="chats" leftSection={<IconMessages size={18} />} className={classes.tab}>
-                <Text size="md">Чаты</Text>
-              </Tabs.Tab>
-              <Tabs.Tab value="contacts" leftSection={<IconUsers size={18} />} className={classes.tab}>
-                <Text size="md">Контакты</Text>
-              </Tabs.Tab>
-            </Tabs.List>
-          </Tabs>
-        </AppShell.Section>
+          {/* Правая колонка с контентом */}
+          <Box w={350} h="100%" bg="blue.8">
+            <Box p="md">
+              <Input
+                placeholder="Поиск"
+                leftSection={<IconSearch size={18} color="white" />}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.currentTarget.value)}
+                mb="md"
+                className={classes.searchInput}
+                size="md"
+              />
+            </Box>
 
-        <AppShell.Section grow my="md" component={ScrollArea}>
-          {isLoading ? (
-            <Flex justify="center" align="center" p="xl">
-              <Loader color="white" size="lg" />
-            </Flex>
-          ) : activeTab === "chats" ? (
-            filteredChats.length === 0 ? (
-              <Text p="md" c="white" size="md">
-                {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
-              </Text>
-            ) : (
-              filteredChats.map(({ chatId, companion }) => (
-                <UnstyledButton
-                  key={chatId}
-                  className={classes.link}
-                  onClick={() => handleChatSelect(chatId, companion.userId)}
-                  py="sm"
-                >
-                  <Group>
-                    <Avatar src={companion.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
-                    <Box style={{ flex: 1 }}>
-                      <Text size="md" fw={500} c="white">
-                        {companion.nickname}
-                      </Text>
-                      <Text size="sm" c="blue.3">
-                        {companion.firstname && companion.secondname
-                          ? `${companion.firstname} ${companion.secondname}`
-                          : companion.nickname}
-                      </Text>
-                    </Box>
-                    <IconChevronRight size={16} color="white" />
-                  </Group>
-                </UnstyledButton>
-              ))
-            )
-          ) : (
-            <>
-              {filteredContacts.length === 0 ? (
-                <Text p="md" c="white" size="md">
-                  {searchQuery ? "Контакты не найдены" : "Нет доступных контактов"}
-                </Text>
-              ) : (
-                filteredContacts.map(({ user }) => {
-                  const chatId = getChatIdWithUser(user.userId)
-                  return (
+            <ScrollArea h="calc(100% - 60px)" px="md">
+              {isLoading ? (
+                <Flex justify="center" align="center" p="xl">
+                  <Loader color="white" size="lg" />
+                </Flex>
+              ) : activeTab === "chats" ? (
+                filteredChats.length === 0 ? (
+                  <Text p="md" c="white" size="md">
+                    {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
+                  </Text>
+                ) : (
+                  filteredChats.map(({ chatId, companion }) => (
                     <UnstyledButton
-                      key={user.userId}
+                      key={chatId}
                       className={classes.link}
-                      onClick={() => chatId && handleChatSelect(chatId, user.userId)}
+                      onClick={() => handleChatSelect(chatId, companion.userId)}
                       py="sm"
-                      disabled={!chatId}
                     >
                       <Group>
-                        <Avatar src={user.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
+                        <Avatar src={companion.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
                         <Box style={{ flex: 1 }}>
                           <Text size="md" fw={500} c="white">
-                            {user.nickname}
+                            {companion.nickname}
                           </Text>
                           <Text size="sm" c="blue.3">
-                            {user.firstname && user.secondname
-                              ? `${user.firstname} ${user.secondname}`
-                              : chatId
-                                ? "Перейти в чат"
-                                : "Чата нет"}
+                            {companion.firstname && companion.secondname
+                              ? `${companion.firstname} ${companion.secondname}`
+                              : companion.nickname}
                           </Text>
                         </Box>
-                        {chatId && <IconChevronRight size={16} color="white" />}
+                        <IconChevronRight size={16} color="white" />
                       </Group>
                     </UnstyledButton>
-                  )
-                })
+                  ))
+                )
+              ) : (
+                <>
+                  {filteredContacts.length === 0 ? (
+                    <Text p="md" c="white" size="md">
+                      {searchQuery ? "Контакты не найдены" : "Нет доступных контактов"}
+                    </Text>
+                  ) : (
+                    filteredContacts.map(({ user }) => {
+                      const chatId = getChatIdWithUser(user.userId);
+                      return (
+                        <UnstyledButton
+                          key={user.userId}
+                          className={classes.link}
+                          onClick={() => chatId && handleChatSelect(chatId, user.userId)}
+                          py="sm"
+                          disabled={!chatId}
+                        >
+                          <Group>
+                            <Avatar src={user.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
+                            <Box style={{ flex: 1 }}>
+                              <Text size="md" fw={500} c="white">
+                                {user.nickname}
+                              </Text>
+                              <Text size="sm" c="blue.3">
+                                {user.firstname && user.secondname
+                                  ? `${user.firstname} ${user.secondname}`
+                                  : chatId
+                                    ? "Перейти в чат"
+                                    : "Чата нет"}
+                              </Text>
+                            </Box>
+                            {chatId && <IconChevronRight size={16} color="white" />}
+                          </Group>
+                        </UnstyledButton>
+                      );
+                    })
+                  )}
+                </>
               )}
-            </>
-          )}
-        </AppShell.Section>
+            </ScrollArea>
+          </Box>
+        </Flex>
       </AppShell.Navbar>
 
-      <AppShell.Main pt="70px">
+      <AppShell.Main pt="70px" pl={430}>
         <Container size="lg" p={0} h="100%">
           {selectedChat ? (
             <Chat chatId={selectedChat.chatId} companionId={selectedChat.companionId} />
@@ -331,7 +352,7 @@ const Home = () => {
         </Container>
       </AppShell.Main>
     </AppShell>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
