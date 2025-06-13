@@ -48,7 +48,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
     } = useQuery({
         queryKey: ['messages', chatId],
         queryFn: () => getMessages(chatId),
-        refetchInterval: 5000,
+        refetchInterval: 55000,
         initialData: () => {
             return queryClient.getQueryData<Message[]>(['messages', chatId]);
         },
