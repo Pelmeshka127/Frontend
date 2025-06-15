@@ -43,7 +43,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
       companions = parsed.companions || [];
     } catch {}
   }
-  const companion = companions.find((c) => c.userId === companionId);
+  const companion = companions.find((c: any) => c.userId === companionId);
 
   useEffect(() => {
     // Сброс сообщений при смене чата
