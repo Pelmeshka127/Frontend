@@ -1,5 +1,6 @@
 // AuthContext.tsx
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { connectWebSocket, disconnectWebSocket } from '../../api/ws';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -28,14 +29,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      connectWebSocket();
+    } else {
+      disconnectWebSocket();
+    }
+    // Отключаем WS при размонтировании
+    return () => {
+      disconnectWebSocket();
+    };
+  }, [isAuthenticated]);
+
   const login = (nickname: string) => {
     localStorage.setItem('currentUser', nickname);
     setIsAuthenticated(true);
+    connectWebSocket();
   };
 
   const logout = () => {
     localStorage.removeItem('currentUser');
     setIsAuthenticated(false);
+    disconnectWebSocket();
   };
 
   return (
