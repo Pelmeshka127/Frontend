@@ -1,9 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useQuery, useQueries } from "@tanstack/react-query";
-import { getCurrentUser, getUserById } from "../../api/getUser";
-import { getAllMyChats, getAllChatMembers } from "../../api/getChats";
-import { getAllContacts } from "../../api/getContacts";
 import {
   AppShell,
   Avatar,
@@ -62,132 +58,97 @@ interface Contact {
   userId: number
 }
 
+interface UserData {
+  currentUser: User;
+  myChats: ChatMember[];
+  allChatMembers: ChatMember[];
+  companions: User[];
+  contacts: Contact[];
+}
+
 const Home = () => {
-  const theme = useMantineTheme()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchParams, setSearchParams] = useSearchParams()
-  const activeTab = searchParams.get("tab") || "chats"
-  const [selectedChat, setSelectedChat] = useState<{ chatId: number; companionId: number } | null>(null)
+  const theme = useMantineTheme();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "chats";
+  const [selectedChat, setSelectedChat] = useState<{ chatId: number; companionId: number } | null>(null);
   const [settingsOpened, { open: openSettings, close: closeSettings }] = useDisclosure(false);
-  const { data: currentUser, isLoading: isLoadingUser } = useQuery<User>({
-    queryKey: ["currentUser"],
-    queryFn: getCurrentUser,
-    staleTime: Number.POSITIVE_INFINITY,
-  })
+  const { logout } = useAuth();
 
-  const { data: myChats = [], isLoading: isLoadingChats } = useQuery<ChatMember[]>({
-    queryKey: ["myChats"],
-    queryFn: getAllMyChats,
-    enabled: !!currentUser,
-  })
+  // Загружаем userData из localStorage
+  const [userData, setUserData] = useState<UserData | null>(() => {
+    const data = localStorage.getItem('userData');
+    return data ? JSON.parse(data) : null;
+  });
 
-  const { data: allChatMembers = [], isLoading: isLoadingMembers } = useQuery<ChatMember[]>({
-    queryKey: ["allChatMembers"],
-    queryFn: getAllChatMembers,
-    enabled: !!currentUser,
-  })
+  // Если данных нет — показываем ошибку
+  if (!userData) {
+    return (
+      <Flex h="100vh" justify="center" align="center" direction="column" c="dimmed">
+        <IconMessage size={48} stroke={1.5} />
+        <Text size="lg" mt="md">
+          Нет данных пользователя. Пожалуйста, войдите заново.
+        </Text>
+      </Flex>
+    );
+  }
 
-  // Contacts data fetching
-  const {
-    data: contacts = [],
-    isLoading: isLoadingContacts,
-  } = useQuery<Contact[]>({
-    queryKey: ["contacts"],
-    queryFn: getAllContacts,
-    enabled: !!currentUser,
-  })
+  const { currentUser, myChats, allChatMembers, companions, contacts } = userData;
 
-  const companionRequests = useQueries({
-    queries:
-      currentUser && allChatMembers.length > 0
-        ? myChats.map(({ chatId }) => {
-            const companionMember = allChatMembers.find((m) => m.chatId === chatId && m.userId !== currentUser.userId)
-            return {
-              queryKey: ["companion", chatId],
-              queryFn: () =>
-                companionMember ? getUserById(companionMember.userId) : Promise.reject("No companion found"),
-              enabled: !!companionMember,
-            }
-          })
-        : [],
-  })
+  // companions: User[] -> ChatWithCompanion[] (сопоставляем chatId)
+  const chatWithCompanions: ChatWithCompanion[] = myChats.map((chat) => {
+    const companion = allChatMembers
+      .filter((m) => m.chatId === chat.chatId && m.userId !== currentUser.userId)
+      .map((m) => companions.find((c) => c.userId === m.userId))
+      .find(Boolean);
+    return companion
+      ? { chatId: chat.chatId, companion }
+      : null;
+  }).filter((c): c is ChatWithCompanion => !!c);
 
-  // Contact users data fetching
-  const contactUserRequests = useQueries({
-    queries: contacts.map((contact) => ({
-      queryKey: ["user", contact.userId],
-      queryFn: () => getUserById(contact.userId),
-      enabled: !!contact.userId,
-    })),
-  })
+  // Контактные пользователи (ищем их среди companions)
+  const contactUsers = contacts.map((contact) => {
+    const user = companions.find((c) => c.userId === contact.userId);
+    return user ? { contact, user } : null;
+  }).filter((entry): entry is { contact: Contact; user: User } => !!entry);
 
-  const companions: ChatWithCompanion[] = companionRequests
-    .map((result, idx) => {
-      if (result.isSuccess && idx < myChats.length) {
-        return {
-          chatId: myChats[idx].chatId,
-          companion: result.data,
-        }
-      }
-      return null
-    })
-    .filter((c): c is ChatWithCompanion => !!c)
-
-  // Process contact users
-  const contactUsers = contactUserRequests
-    .map((result, idx) => {
-      if (result.isSuccess && idx < contacts.length) {
-        return {
-          contact: contacts[idx],
-          user: result.data,
-        }
-      }
-      return null
-    })
-    .filter((entry): entry is { contact: Contact; user: User } => !!entry)
-
-  const filteredChats = companions.filter((chat) => {
-    if (!searchQuery) return true
-    const query = searchQuery.toLowerCase()
+  const filteredChats = chatWithCompanions.filter((chat) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
     return (
       chat.companion.nickname.toLowerCase().includes(query) ||
       (chat.companion.firstname && chat.companion.firstname.toLowerCase().includes(query)) ||
       (chat.companion.secondname && chat.companion.secondname.toLowerCase().includes(query))
-    )
-  })
+    );
+  });
 
-  // Filter contacts based on search query
   const filteredContacts = contactUsers.filter((entry) => {
-    if (!searchQuery) return true
-    const query = searchQuery.toLowerCase()
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
     return (
       entry.user.nickname.toLowerCase().includes(query) ||
       (entry.user.firstname && entry.user.firstname.toLowerCase().includes(query)) ||
       (entry.user.secondname && entry.user.secondname.toLowerCase().includes(query))
-    )
-  })
+    );
+  });
 
-  // Function to get chat ID with a specific user
+  // Функция для получения chatId по userId
   const getChatIdWithUser = (userId: number): number | null => {
     for (const chat of myChats) {
-      const members = allChatMembers.filter((m) => m.chatId === chat.chatId)
-      const hasCompanion = members.some((m) => m.userId === userId)
-      if (hasCompanion) return chat.chatId
+      const members = allChatMembers.filter((m) => m.chatId === chat.chatId);
+      const hasCompanion = members.some((m) => m.userId === userId);
+      if (hasCompanion) return chat.chatId;
     }
-    return null
-  }
-
-  const isLoading = isLoadingUser || isLoadingChats || isLoadingMembers || isLoadingContacts
+    return null;
+  };
 
   const handleTabChange = (tab: string) => {
-    setSearchParams({ tab })
-  }
+    setSearchParams({ tab });
+  };
 
   const handleChatSelect = (chatId: number, companionId: number) => {
-    setSelectedChat({ chatId, companionId })
-  }
-
-  const { logout } = useAuth();
+    setSelectedChat({ chatId, companionId });
+  };
 
   const handleLogout = async () => {
     try {
@@ -295,40 +256,34 @@ const Home = () => {
               </Box>
 
               <ScrollArea h="calc(100% - 60px)" px="md">
-                {isLoading ? (
-                  <Flex justify="center" align="center" p="xl">
-                    <Loader color="white" size="lg" />
-                  </Flex>
+                {filteredChats.length === 0 && activeTab === "chats" ? (
+                  <Text p="md" c="white" size="md">
+                    {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
+                  </Text>
                 ) : activeTab === "chats" ? (
-                  filteredChats.length === 0 ? (
-                    <Text p="md" c="white" size="md">
-                      {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
-                    </Text>
-                  ) : (
-                    filteredChats.map(({ chatId, companion }) => (
-                      <UnstyledButton
-                        key={chatId}
-                        className={classes.link}
-                        onClick={() => handleChatSelect(chatId, companion.userId)}
-                        py="sm"
-                      >
-                        <Group>
-                          <Avatar src={companion.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
-                          <Box style={{ flex: 1 }}>
-                            <Text size="md" fw={500} c="white">
-                              {companion.nickname}
-                            </Text>
-                            <Text size="sm" c="blue.3">
-                              {companion.firstname && companion.secondname
-                                ? `${companion.firstname} ${companion.secondname}`
-                                : companion.nickname}
-                            </Text>
-                          </Box>
-                          <IconChevronRight size={16} color="white" />
-                        </Group>
-                      </UnstyledButton>
-                    ))
-                  )
+                  filteredChats.map(({ chatId, companion }) => (
+                    <UnstyledButton
+                      key={chatId}
+                      className={classes.link}
+                      onClick={() => handleChatSelect(chatId, companion.userId)}
+                      py="sm"
+                    >
+                      <Group>
+                        <Avatar src={companion.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
+                        <Box style={{ flex: 1 }}>
+                          <Text size="md" fw={500} c="white">
+                            {companion.nickname}
+                          </Text>
+                          <Text size="sm" c="blue.3">
+                            {companion.firstname && companion.secondname
+                              ? `${companion.firstname} ${companion.secondname}`
+                              : companion.nickname}
+                          </Text>
+                        </Box>
+                        <IconChevronRight size={16} color="white" />
+                      </Group>
+                    </UnstyledButton>
+                  ))
                 ) : (
                   <>
                     {filteredContacts.length === 0 ? (

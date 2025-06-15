@@ -26,27 +26,10 @@ const LoginForm = () => {
         }
 
         try {
-            console.log('[Login] Отправка запроса на авторизацию:', username);
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                  'Authorization': 'Basic ' + btoa(username + ':' + password)
-                },
-                credentials: 'include'
-              });
-            console.log('[Login] Ответ сервера:', response.status, response.statusText);
-            if (response.ok) {
-                const user = await response.json();
-                console.log('[Login] Успешная авторизация, никнейм:', user.nickname);
-                login(user.nickname); // Используем функцию login из контекста
-                navigate('/', { replace: true });
-            } else {
-                console.error('[Login] Ошибка авторизации:', response.status, response.statusText);
-                setError('Неверный логин или пароль');
-            }
+            await login(username, password); // теперь login асинхронный!
+            navigate('/', { replace: true });
         } catch (err) {
-            console.error('[Login] Ошибка сети:', err);
-            setError('Ошибка сети');
+            setError('Неверный логин или пароль');
         } finally {
             setIsLoading(false);
         }
