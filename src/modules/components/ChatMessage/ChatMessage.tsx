@@ -7,20 +7,19 @@ interface MessageProps {
   time: string;
   date: string;
   isCurrentUser: boolean;
-  isActive: boolean
+  isActive: boolean;
+  className?: string;
 }
 
-export function ChatMessage({ message, time, date, isCurrentUser }: MessageProps) {
+export const ChatMessage: React.FC<MessageProps> = ({ message, time, date, isCurrentUser, className }) => {
   const theme = useMantineTheme();
 
   return (
     <Box
       mx="md"
       mb="sm"
-      style={{
-        display: 'flex',
-        justifyContent: isCurrentUser ? 'flex-end' : 'flex-start',
-      }}
+      className={className}
+      style={{ display: 'flex', justifyContent: isCurrentUser ? 'flex-end' : 'flex-start' }}
     >
       <Paper
         p="sm"
@@ -39,15 +38,13 @@ export function ChatMessage({ message, time, date, isCurrentUser }: MessageProps
             {message}
           </Text>
 
-
           <Flex justify="flex-end">
             <Text size="xs" c={isCurrentUser ? 'white' : 'dimmed'}>
               {time} • {date}
             </Text>
           </Flex>
-        
         </Stack>
       </Paper>
     </Box>
   );
-}
+};

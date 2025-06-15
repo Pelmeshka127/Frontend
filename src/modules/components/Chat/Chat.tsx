@@ -1,196 +1,242 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getUserById, getCurrentUser } from '../../api/getUser';
-import { getMessages, sendMessage } from '../../api/getMessage';
+import {
+  sendMessage,
+  getLastNMessagesWithText,
+  getNMessagesBeforeMessageWithText,
+  MessageWithTextDto
+} from '../../api/getMessage';
 import defaultProfilePicture from '../../../assets/default_profile_picture.png';
-
 import { ScrollArea, Group, Divider, Stack, Box, Button, Textarea } from '@mantine/core';
 import { ChatMessage } from '../ChatMessage';
 import { UserModal } from '../UserModal';
-
-interface Message {
-    messageId: number;
-    senderId: number;
-    content: string;
-    sendDttm: string;
-}
 
 interface ChatProps {
   chatId: number;
   companionId: number;
 }
 
+const PAGE_SIZE = 40;
+
 const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
-    const [newMessage, setNewMessage] = useState('');
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const queryClient = useQueryClient();
+  const [messages, setMessages] = useState<MessageWithTextDto[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+  // refs для корректировки скролла при подгрузке
+  const oldScrollHeightRef = useRef<number | null>(null);
+  const oldScrollTopRef = useRef<number | null>(null);
+  const loadingMoreRef = useRef(false);
+  const [optimisticId, setOptimisticId] = useState<number | null>(null);
 
-    const { data: currentUser } = useQuery({
-        queryKey: ['currentUser'],
-        queryFn: getCurrentUser,
-        staleTime: Infinity,
-    });
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: getCurrentUser,
+    staleTime: Infinity,
+  });
 
-    const { data: companion } = useQuery({
-        queryKey: ['companion', companionId],
-        queryFn: () => getUserById(companionId),
-        enabled: !!companionId,
-        select: (user) => ({
-            ...user,
-            profilePictureLink: user.profilePictureLink || defaultProfilePicture
-        }),
-        staleTime: Infinity,
-    });
+  const { data: companion } = useQuery({
+    queryKey: ['companion', companionId],
+    queryFn: () => getUserById(companionId),
+    enabled: !!companionId,
+    select: (user) => ({
+      ...user,
+      profilePictureLink: user.profilePictureLink || defaultProfilePicture
+    }),
+    staleTime: Infinity,
+  });
 
-    const {
-        data: messages = [],
-        isLoading: loadingMessages,
-    } = useQuery({
-        queryKey: ['messages', chatId],
-        queryFn: () => getMessages(chatId),
-        refetchInterval: 55000,
-        initialData: () => {
-            return queryClient.getQueryData<Message[]>(['messages', chatId]);
-        },
-    });
+  useEffect(() => {
+    // Сброс сообщений при смене чата
+    setMessages([]);
+  }, [chatId]);
 
-    const messageMutation = useMutation({
-        mutationFn: (text: string) => {
-            if (!currentUser) throw new Error('Current user not loaded');
-            return sendMessage(chatId, currentUser.userId, text);
-        },
-        onMutate: async (text) => {
-            await queryClient.cancelQueries({ queryKey: ['messages', chatId] });
+  // Загрузка последних сообщений при открытии чата
+  useEffect(() => {
+    setLoading(true);
+    getLastNMessagesWithText(chatId, PAGE_SIZE)
+      .then(msgs => {
+        setMessages(msgs.reverse());
+        setHasMore(msgs.length === PAGE_SIZE);
+        // Прокрутка вниз после первой загрузки
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        }, 0);
+      })
+      .finally(() => setLoading(false));
+  }, [chatId]);
 
-            const previousMessages = queryClient.getQueryData<Message[]>(['messages', chatId]);
-
-            const optimisticMessage: Message = {
-                messageId: Date.now(),
-                senderId: currentUser!.userId,
-                content: text,
-                sendDttm: new Date().toISOString(),
-            };
-
-            queryClient.setQueryData<Message[]>(['messages', chatId], (old = []) => [
-                ...old,
-                optimisticMessage,
-            ]);
-
-            setTimeout(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, 0);
-
-            return { previousMessages };
-        },
-        onError: (err, newMessage, context) => {
-            queryClient.setQueryData(['messages', chatId], context?.previousMessages);
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['messages', chatId] });
-            setNewMessage('');
-        },
-    });
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newMessage.trim()) return;
-        messageMutation.mutate(newMessage);
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSendMessage(e);
-        }
-    };
-
-    const formatDateTime = (dateString: string) => {
-        const date = new Date(dateString);
-        return {
-            time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            date: date.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })
-        };
-    };
-
-    if (!chatId) {
-        return <div className="error-message">Чат не найден</div>;
+  // Скролл вниз после первой загрузки сообщений
+  useEffect(() => {
+    if (messages.length > 0 && messages.length <= PAGE_SIZE) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
     }
+  }, [messages]);
 
-    if (!currentUser || !companion) {
-        return <div className="error-message">Ошибка загрузки данных</div>;
+  // Подгрузка старых сообщений
+  const loadMore = async () => {
+    if (!hasMore || loading || messages.length === 0) return;
+    setLoading(true);
+
+    // Сохраняем высоту и позицию скролла до подгрузки в ref
+    if (scrollRef.current) {
+      oldScrollHeightRef.current = scrollRef.current.scrollHeight;
+      oldScrollTopRef.current = scrollRef.current.scrollTop;
+    } else {
+      oldScrollHeightRef.current = null;
+      oldScrollTopRef.current = null;
     }
+    loadingMoreRef.current = true;
 
-    if (currentUser.userId === companionId) {
-        return <div className='error-message'>Нельзя писать самому себе</div>;
+    const firstMsgId = messages[0].messageId;
+    const older = await getNMessagesBeforeMessageWithText(chatId, firstMsgId, PAGE_SIZE);
+
+    setMessages(prev => [...older.reverse(), ...prev]);
+    setHasMore(older.length === PAGE_SIZE);
+    setLoading(false);
+
+    // Скролл теперь будет корректироваться в useLayoutEffect
+    // (убираем requestAnimationFrame отсюда)
+  };
+
+  // Корректировка скролла после подгрузки старых сообщений
+  useLayoutEffect(() => {
+    if (loadingMoreRef.current && scrollRef.current && oldScrollHeightRef.current !== null && oldScrollTopRef.current !== null) {
+      const newScrollHeight = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop = newScrollHeight - oldScrollHeightRef.current + oldScrollTopRef.current;
+      // Сбросить флаги
+      loadingMoreRef.current = false;
+      oldScrollHeightRef.current = null;
+      oldScrollTopRef.current = null;
     }
+  }, [messages]);
 
-    return (
-        <Stack className="chat-container">
-            <Group className="chat-header">
-  
-                <UserModal otherUser = {companion} currentUser={currentUser}/>
+  // Отправка сообщения
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !currentUser) return;
+    setLoading(true);
+    try {
+      const serverMessage = await sendMessage(chatId, currentUser.userId, newMessage);
+      setMessages(prev => [...prev, serverMessage]);
+      setNewMessage('');
+      setShouldScrollToBottom(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                <div className="header-info">
-                    <h3>{companion.nickname}</h3>
-                </div>
-            </Group>
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e as any);
+    }
+  };
 
-            <Divider/>
-            
-            <ScrollArea className="messages-container" w="100vh" h="65vh">
-                {loadingMessages && messages.length === 0 ? (
-                    <div className="loading-message">Загрузка сообщений...</div>
-                ) : messages.length === 0 ? (
-                    <div className="empty-chat">Нет сообщений. Начните диалог!</div>
-                ) : (
-                    messages.map((message) => {
-                        const isCurrentUser = message.senderId === currentUser.userId;
-                        const { time, date } = formatDateTime(message.sendDttm);
-                        const senderNickname = isCurrentUser ? currentUser.nickname : companion.nickname
-                        
-                        return (
-                            <ChatMessage
-                                avatar={companion.profilePictureLink}
-                                nickname={senderNickname}
-                                message={message.content}
-                                time={time}
-                                date={date}
-                                isCurrentUser={isCurrentUser}
-                                isActive={companion.isActive}
-                            />
-                        )
-                    })
-                )}
-                <div ref={messagesEndRef} />
-            </ScrollArea>
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: date.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' })
+    };
+  };
 
-            <Box component='form' onSubmit={handleSendMessage}>
-            <Box style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                <Textarea
-                    style={{ flex: 1 }}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Your message"
-                    className="message-input"
-                    disabled={messageMutation.isPending}
-                />
-        
-                <Button
-                    type="submit" 
-                    className="send-button"
-                    disabled={!newMessage.trim() || messageMutation.isPending}
-                >
-                    {messageMutation.isPending ? 'Sending...' : 'Send'}
-                </Button>
-                </Box>
+  // Скролл вниз только после отправки нового сообщения
+  useEffect(() => {
+    if (shouldScrollToBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setShouldScrollToBottom(false);
+    }
+  }, [messages, shouldScrollToBottom]);
+
+  useEffect(() => {
+    if (optimisticId !== null) {
+      const timer = setTimeout(() => setOptimisticId(null), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [optimisticId]);
+
+  if (!chatId) return <div className="error-message">Чат не найден</div>;
+  if (!currentUser || !companion) return <div className="error-message">Ошибка загрузки данных</div>;
+  if (currentUser.userId === companionId) return <div className='error-message'>Нельзя писать самому себе</div>;
+
+  return (
+    <Stack className="chat-container">
+      <Group className="chat-header">
+        <UserModal otherUser={companion} currentUser={currentUser} />
+        <div className="header-info">
+          <h3>{companion.nickname}</h3>
+        </div>
+      </Group>
+      <Divider />
+      <ScrollArea
+        className="messages-container"
+        w="100vh"
+        h="65vh"
+        viewportRef={scrollRef}
+      >
+        {/* Кнопка подгрузки */}
+        {hasMore && (
+          <Box style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
+            <Button
+              size="xs"
+              onClick={loadMore}
+              disabled={loading}
+              variant="light"
+            >
+              Загрузить ещё
+            </Button>
+          </Box>
+        )}
+
+        {/* Список сообщений */}
+        {messages.map((message) => {
+          const isCurrentUser = message.senderId === currentUser.userId;
+          const { time, date } = formatDateTime(message.sendDttm);
+          const senderNickname = isCurrentUser ? currentUser.nickname : companion.nickname;
+          const className = message.messageId === optimisticId ? 'chat-message-appear' : '';
+          return (
+            <ChatMessage
+              key={message.messageId}
+              avatar={companion.profilePictureLink}
+              nickname={senderNickname}
+              message={message.text}
+              time={time}
+              date={date}
+              isCurrentUser={isCurrentUser}
+              isActive={companion.isActive}
+              className={className}
+            />
+          );
+        })}
+        <div ref={messagesEndRef} />
+      </ScrollArea>
+      <Box component='form' onSubmit={handleSendMessage}>
+        <Box style={{ display: 'flex', gap: '8px', width: '100%' }}>
+          <Textarea
+            style={{ flex: 1 }}
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Your message"
+            className="message-input"
+            disabled={loading}
+          />
+          <Button
+            type="submit"
+            className="send-button"
+            disabled={!newMessage.trim() || loading}
+          >
+            {loading ? 'Sending...' : 'Send'}
+          </Button>
         </Box>
-        </Stack>
-    );
+      </Box>
+    </Stack>
+  );
 };
 
 export { Chat };
