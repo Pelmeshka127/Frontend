@@ -33,22 +33,17 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
   const loadingMoreRef = useRef(false);
   const [optimisticId, setOptimisticId] = useState<number | null>(null);
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: getCurrentUser,
-    staleTime: Infinity,
-  });
-
-  const { data: companion } = useQuery({
-    queryKey: ['companion', companionId],
-    queryFn: () => getUserById(companionId),
-    enabled: !!companionId,
-    select: (user) => ({
-      ...user,
-      profilePictureLink: user.profilePictureLink || defaultProfilePicture
-    }),
-    staleTime: Infinity,
-  });
+  const userDataRaw = localStorage.getItem('userData');
+  let currentUser = null;
+  let companions = [];
+  if (userDataRaw) {
+    try {
+      const parsed = JSON.parse(userDataRaw);
+      currentUser = parsed.currentUser;
+      companions = parsed.companions || [];
+    } catch {}
+  }
+  const companion = companions.find((c) => c.userId === companionId);
 
   useEffect(() => {
     // Сброс сообщений при смене чата
@@ -202,7 +197,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
           return (
             <ChatMessage
               key={message.messageId}
-              avatar={companion.profilePictureLink}
+              avatar={companion.profilePictureLink || defaultProfilePicture}
               nickname={senderNickname}
               message={message.text}
               time={time}
