@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useDisclosure, useToggle } from '@mantine/hooks';
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { getCurrentUser, getUserById } from "../../api/getUser";
@@ -20,6 +21,12 @@ import {
   ActionIcon,
   NavLink,
   Stack,
+  AppShellAside,
+  Drawer,
+  Switch,
+  Button,
+  createTheme,
+  MantineProvider
 } from "@mantine/core";
 import {
   IconSearch,
@@ -28,10 +35,14 @@ import {
   IconChevronRight,
   IconUsers,
   IconMessages,
+  IconSun,
+  IconMoonStars
 } from "@tabler/icons-react";
 import defaultProfilePicture from "../../../assets/default_profile_picture.png";
 import classes from "./Navbar.module.css";
 import { Chat } from "../Chat";
+import { SettingsCard } from "../Settings";
+import { DarkTheme } from "../Settings/Settings";
 
 interface ChatMember {
   chatId: number
@@ -64,6 +75,7 @@ const Home = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = searchParams.get("tab") || "chats"
   const [selectedChat, setSelectedChat] = useState<{ chatId: number; companionId: number } | null>(null)
+  const [settingsOpened, {open, close} ] = useDisclosure(false);
 
   const { data: currentUser, isLoading: isLoadingUser } = useQuery<User>({
     queryKey: ["currentUser"],
@@ -183,7 +195,54 @@ const Home = () => {
     setSelectedChat({ chatId, companionId })
   }
 
+  const theme1 = createTheme({
+  colors: {
+    // Add your color
+    deepBlue: [
+      '#eef3ff',
+      '#dce4f5',
+      '#b9c7e2',
+      '#94a8d0',
+      '#748dc1',
+      '#5f7cb8',
+      '#5474b4',
+      '#44639f',
+      '#39588f',
+      '#2d4b81',
+    ],
+    // or replace default theme color
+    blue: [
+      '#eef3ff',
+      '#dee2f2',
+      '#bdc2de',
+      '#98a0ca',
+      '#7a84ba',
+      '#6672b0',
+      '#5c68ac',
+      '#4c5897',
+      '#424e88',
+      '#364379',
+    ],
+  },
+
+  shadows: {
+    md: '1px 1px 3px rgba(0, 0, 0, .25)',
+    xl: '5px 5px 3px rgba(0, 0, 0, .25)',
+  },
+
+  headings: {
+    fontFamily: 'Roboto, sans-serif',
+    sizes: {
+      h1: { fontSize: 36 },
+    },
+  },
+});
+
+const [themeValue, themeToggle] = useToggle([theme, theme1]);
+
   return (
+    <MantineProvider theme={themeValue}>
+
     <AppShell
       padding="md"
       header={{ height: 70 }}
@@ -193,6 +252,8 @@ const Home = () => {
         collapsed: { mobile: false },
       }}
     >
+      
+      
       <AppShell.Header px="md">
         <Group h="100%" justify="space-between">
           <Group>
@@ -206,7 +267,21 @@ const Home = () => {
               </Text>
             </Box>
           </Group>
-          <ActionIcon variant="transparent" size="xl">
+          <Drawer opened={settingsOpened} onClose={close} title="Settings" position="right">
+            <Switch
+              label="Theme"
+              size="md"
+              color="dark.4"
+              onLabel={<IconSun size={16} stroke={2.5} color="var(--mantine-color-yellow-4)" />}
+              offLabel={<IconMoonStars size={16} stroke={2.5} color="var(--mantine-color-blue-6)" />}
+              onChange={() => themeToggle()}
+            />
+          </Drawer>
+          <ActionIcon 
+            variant="transparent" 
+            size="xl"
+            onClick={open}
+          >
             <IconSettings size={44} />
           </ActionIcon>
         </Group>
@@ -335,9 +410,12 @@ const Home = () => {
             </ScrollArea>
           </Box>
         </Flex>
+        
       </AppShell.Navbar>
+       
 
-      <AppShell.Main pt="70px" pl={430}>
+      
+      <AppShell.Main>
         <Container size="lg" p={0} h="100%">
           {selectedChat ? (
             <Chat chatId={selectedChat.chatId} companionId={selectedChat.companionId} />
@@ -349,10 +427,13 @@ const Home = () => {
               </Text>
             </Flex>
           )}
-        </Container>
+          </Container>
       </AppShell.Main>
+      
     </AppShell>
+    </MantineProvider>
   );
 };
+
 
 export default Home;

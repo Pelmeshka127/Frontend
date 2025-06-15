@@ -22,3 +22,9 @@
 .content {
     padding: 20px;
 }
+
+.settings {
+    position: absolute;
+    height: 100%;
+    padding-left: 75%;
+}
