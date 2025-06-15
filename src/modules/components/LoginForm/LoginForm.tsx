@@ -26,24 +26,26 @@ const LoginForm = () => {
         }
 
         try {
+            console.log('[Login] Отправка запроса на авторизацию:', username);
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Basic ' + btoa(username + ':' + password),
-                    'Content-Type': 'application/json'
+                  'Authorization': 'Basic ' + btoa(username + ':' + password)
                 },
-                credentials: 'include',
-                body: JSON.stringify({})
-            });
-
+                credentials: 'include'
+              });
+            console.log('[Login] Ответ сервера:', response.status, response.statusText);
             if (response.ok) {
-                const nickname = await response.text();
-                login(nickname); // Используем функцию login из контекста
+                const user = await response.json();
+                console.log('[Login] Успешная авторизация, никнейм:', user.nickname);
+                login(user.nickname); // Используем функцию login из контекста
                 navigate('/', { replace: true });
             } else {
+                console.error('[Login] Ошибка авторизации:', response.status, response.statusText);
                 setError('Неверный логин или пароль');
             }
         } catch (err) {
+            console.error('[Login] Ошибка сети:', err);
             setError('Ошибка сети');
         } finally {
             setIsLoading(false);
@@ -59,11 +61,11 @@ const LoginForm = () => {
                 withBorder
                 style={{ width: '100%', maxWidth: 400 }}
             >
-                <Stack spacing="lg">
-                    <Title order={2} align="center">
+                <Stack gap="lg">
+                    <Title order={2} ta="center">
                         Вход в приложение
                     </Title>
-                    <Text color="dimmed" size="sm" align="center">
+                    <Text color="dimmed" size="sm" ta="center">
                         Введите ваши данные для входа
                     </Text>
                     <form onSubmit={handleSubmit}>
@@ -86,11 +88,11 @@ const LoginForm = () => {
                             mt="sm"
                         />
                         {error && (
-                            <Text color="red" size="sm" mt="sm" align="center">
+                            <Text color="red" size="sm" mt="sm" ta="center">
                                 {error}
                             </Text>
                         )}
-                        <Group position="center" mt="lg">
+                        <Group justify="center" mt="lg">
                             <Button
                                 type="submit"
                                 size="md"

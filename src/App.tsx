@@ -12,7 +12,12 @@ import { MantineProvider } from '@mantine/core';
 import { AuthProvider, useAuth } from './modules/components/AuthContext/AuthContext'; // Импортируем AuthProvider и useAuth
 
 const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    // Можно показать спиннер или пустой экран
+    return <div>Загрузка...</div>;
+  }
 
   return (
     <Routes>

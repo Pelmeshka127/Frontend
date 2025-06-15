@@ -5,16 +5,27 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (nickname: string) => void;
   logout: () => void;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const user = localStorage.getItem('currentUser');
-    setIsAuthenticated(!!user);
+    // Проверяем сессию при старте
+    fetch('/api/user/current', { credentials: 'include' })
+      .then(res => {
+        if (res.ok) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      })
+      .catch(() => setIsAuthenticated(false))
+      .finally(() => setLoading(false));
   }, []);
 
   const login = (nickname: string) => {
@@ -28,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
