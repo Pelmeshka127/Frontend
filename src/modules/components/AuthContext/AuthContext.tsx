@@ -1,6 +1,6 @@
 // AuthContext.tsx
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { connectWebSocket, disconnectWebSocket } from '../../api/ws';
+import { connectWebSocket, disconnectWebSocket, subscribeToUserEvents } from '../../api/ws';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -75,7 +75,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('currentUser');
     localStorage.removeItem('userData');
     setIsAuthenticated(false);
     disconnectWebSocket();

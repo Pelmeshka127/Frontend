@@ -15,11 +15,12 @@ import { UserModal } from '../UserModal';
 interface ChatProps {
   chatId: number;
   companionId: number;
+  addMessageToChatRef?: React.MutableRefObject<null | ((chatId: number, message: any) => void)>;
 }
 
 const PAGE_SIZE = 40;
 
-const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
+const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef }) => {
   const [messages, setMessages] = useState<MessageWithTextDto[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -32,6 +33,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
   const oldScrollTopRef = useRef<number | null>(null);
   const loadingMoreRef = useRef(false);
   const [optimisticId, setOptimisticId] = useState<number | null>(null);
+  const prevMessagesLength = useRef(messages.length);
 
   const userDataRaw = localStorage.getItem('userData');
   let currentUser = null;
@@ -46,9 +48,8 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
   const companion = companions.find((c: any) => c.userId === companionId);
 
   useEffect(() => {
-    // Сброс сообщений при смене чата
-    setMessages([]);
-  }, [chatId]);
+    // setMessages([]); // Убрать эту строку!
+  }, [chatId, companionId]);
 
   // Загрузка последних сообщений при открытии чата
   useEffect(() => {
@@ -90,7 +91,10 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
     const firstMsgId = messages[0].messageId;
     const older = await getNMessagesBeforeMessageWithText(chatId, firstMsgId, PAGE_SIZE);
 
-    setMessages(prev => [...older.reverse(), ...prev]);
+    setMessages(prev => {
+      const next = [...older.reverse(), ...prev];
+      return next;
+    });
     setHasMore(older.length === PAGE_SIZE);
     setLoading(false);
 
@@ -116,8 +120,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
     if (!newMessage.trim() || !currentUser) return;
     setLoading(true);
     try {
-      const serverMessage = await sendMessage(chatId, currentUser.userId, newMessage);
-      setMessages(prev => [...prev, serverMessage]);
+      await sendMessage(chatId, currentUser.userId, newMessage);
       setNewMessage('');
       setShouldScrollToBottom(true);
     } finally {
@@ -140,7 +143,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
     };
   };
 
-  // Скролл вниз только после отправки нового сообщения
+  // Скролл вниз только после отправки или получения нового сообщения
   useEffect(() => {
     if (shouldScrollToBottom) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -154,6 +157,24 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId }) => {
       return () => clearTimeout(timer);
     }
   }, [optimisticId]);
+
+  // При монтировании/смене чата регистрируем функцию для добавления сообщения
+  useEffect(() => {
+    if (addMessageToChatRef) {
+      addMessageToChatRef.current = (incomingChatId, message) => {
+        if (incomingChatId === chatId) {
+          setMessages(prev => {
+            if (prev.some(m => m.messageId === message.messageId)) return prev;
+            return [...prev, message];
+          });
+          setShouldScrollToBottom(true);
+        }
+      };
+      return () => {
+        addMessageToChatRef.current = null;
+      };
+    }
+  }, [chatId, addMessageToChatRef]);
 
   if (!chatId) return <div className="error-message">Чат не найден</div>;
   if (!currentUser || !companion) return <div className="error-message">Ошибка загрузки данных</div>;

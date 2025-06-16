@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AppShell,
@@ -32,39 +32,17 @@ import classes from "./Navbar.module.css";
 import { Chat } from "../Chat";
 import { useDisclosure } from "@mantine/hooks";
 import { useAuth } from "../AuthContext/AuthContext";
-
-interface ChatMember {
-  chatId: number
-  userId: number
-  joinDttm: string
-  leaveDttm: string | null
-}
-
-interface User {
-  userId: number
-  nickname: string
-  firstname?: string
-  secondname?: string
-  profilePictureLink?: string
-}
-
-interface ChatWithCompanion {
-  chatId: number
-  companion: User
-}
-
-interface Contact {
-  ownerId: number
-  userId: number
-}
-
-interface UserData {
-  currentUser: User;
-  myChats: ChatMember[];
-  allChatMembers: ChatMember[];
-  companions: User[];
-  contacts: Contact[];
-}
+import { Chats } from '../Chat/Chats';
+import { subscribeToUserEvents, connectWebSocket } from '../../api/ws';
+import {
+  ChatMember,
+  User,
+  ChatWithCompanion,
+  Contact,
+  UserData,
+  getChatIdWithUser,
+  mapChatsWithCompanions,
+} from './Home.utils';
 
 const Home = () => {
   const theme = useMantineTheme();
@@ -74,6 +52,9 @@ const Home = () => {
   const [selectedChat, setSelectedChat] = useState<{ chatId: number; companionId: number } | null>(null);
   const [settingsOpened, { open: openSettings, close: closeSettings }] = useDisclosure(false);
   const { logout } = useAuth();
+  const [unreadChats, setUnreadChats] = useState<Set<number>>(new Set());
+  const addMessageToChatRef = useRef<null | ((chatId: number, message: any) => void)>(null);
+  const selectedChatIdRef = useRef<number | null>(null);
 
   // Загружаем userData из localStorage
   const [userData, setUserData] = useState<UserData | null>(() => {
@@ -96,15 +77,7 @@ const Home = () => {
   const { currentUser, myChats, allChatMembers, companions, contacts } = userData;
 
   // companions: User[] -> ChatWithCompanion[] (сопоставляем chatId)
-  const chatWithCompanions: ChatWithCompanion[] = myChats.map((chat) => {
-    const companion = allChatMembers
-      .filter((m) => m.chatId === chat.chatId && m.userId !== currentUser.userId)
-      .map((m) => companions.find((c) => c.userId === m.userId))
-      .find(Boolean);
-    return companion
-      ? { chatId: chat.chatId, companion }
-      : null;
-  }).filter((c): c is ChatWithCompanion => !!c);
+  const chatWithCompanions: ChatWithCompanion[] = mapChatsWithCompanions(myChats, allChatMembers, companions, currentUser);
 
   // Контактные пользователи (ищем их среди companions)
   const contactUsers = contacts.map((contact) => {
@@ -133,14 +106,7 @@ const Home = () => {
   });
 
   // Функция для получения chatId по userId
-  const getChatIdWithUser = (userId: number): number | null => {
-    for (const chat of myChats) {
-      const members = allChatMembers.filter((m) => m.chatId === chat.chatId);
-      const hasCompanion = members.some((m) => m.userId === userId);
-      if (hasCompanion) return chat.chatId;
-    }
-    return null;
-  };
+  const getChatIdWithUserMemo = (userId: number): number | null => getChatIdWithUser(myChats, allChatMembers, userId);
 
   const handleTabChange = (tab: string) => {
     setSearchParams({ tab });
@@ -157,9 +123,55 @@ const Home = () => {
       window.location.reload();
     } catch (e) {
       // Logging only in English!
-      console.error('Logout error', e);
     }
   };
+
+  // Обработчик новых сообщений по WebSocket
+  const handleWsEvent = (topic: string, body: string) => {
+    if (topic === 'chat-message') {
+      try {
+        const msg = JSON.parse(body);
+        const chatId = msg.chatId;
+        if (selectedChatIdRef.current === chatId && addMessageToChatRef.current) {
+          addMessageToChatRef.current(chatId, msg);
+        } else {
+          setUnreadChats(prev => {
+            const next = new Set(prev);
+            next.add(chatId);
+            return next;
+          });
+        }
+      } catch (e) { }
+    }
+    // Можно добавить обработку других событий (new-chat, added-to-contacts)
+  };
+
+  // При открытии чата убираем индикатор непрочитанного
+  useEffect(() => {
+    if (selectedChat) {
+      setUnreadChats(prev => {
+        const next = new Set(prev);
+        next.delete(selectedChat.chatId);
+        return next;
+      });
+    }
+  }, [selectedChat]);
+
+  // Подписка на события WebSocket с нужным обработчиком
+  useEffect(() => {
+    if (userData && userData.currentUser && userData.myChats) {
+      connectWebSocket();
+      const userId = userData.currentUser.userId;
+      const chatIds = userData.myChats.map((c: any) => c.chatId);
+      setTimeout(() => {
+        subscribeToUserEvents(userId, chatIds, handleWsEvent);
+      }, 500);
+    }
+  }, [userData]);
+
+  useEffect(() => {
+    selectedChatIdRef.current = selectedChat?.chatId ?? null;
+  }, [selectedChat]);
 
   return (
     <>
@@ -253,92 +265,67 @@ const Home = () => {
                   className={classes.searchInput}
                   size="md"
                 />
-              </Box>
+            </Box>
 
-              <ScrollArea h="calc(100% - 60px)" px="md">
-                {filteredChats.length === 0 && activeTab === "chats" ? (
-                  <Text p="md" c="white" size="md">
-                    {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
-                  </Text>
-                ) : activeTab === "chats" ? (
-                  filteredChats.map(({ chatId, companion }) => (
-                    <UnstyledButton
-                      key={chatId}
-                      className={classes.link}
-                      onClick={() => handleChatSelect(chatId, companion.userId)}
-                      py="sm"
-                    >
-                      <Group>
-                        <Avatar src={companion.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
-                        <Box style={{ flex: 1 }}>
-                          <Text size="md" fw={500} c="white">
-                            {companion.nickname}
-                          </Text>
-                          <Text size="sm" c="blue.3">
-                            {companion.firstname && companion.secondname
-                              ? `${companion.firstname} ${companion.secondname}`
-                              : companion.nickname}
-                          </Text>
-                        </Box>
-                        <IconChevronRight size={16} color="white" />
-                      </Group>
-                    </UnstyledButton>
-                  ))
-                ) : (
-                  <>
-                    {filteredContacts.length === 0 ? (
-                      <Text p="md" c="white" size="md">
-                        {searchQuery ? "Контакты не найдены" : "Нет доступных контактов"}
-                      </Text>
-                    ) : (
-                      filteredContacts.map(({ user }) => {
-                        const chatId = getChatIdWithUser(user.userId);
-                        return (
-                          <UnstyledButton
-                            key={user.userId}
-                            className={classes.link}
-                            onClick={() => chatId && handleChatSelect(chatId, user.userId)}
-                            py="sm"
-                            disabled={!chatId}
-                          >
-                            <Group>
-                              <Avatar src={user.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
-                              <Box style={{ flex: 1 }}>
-                                <Text size="md" fw={500} c="white">
-                                  {user.nickname}
-                                </Text>
-                                <Text size="sm" c="blue.3">
-                                  {user.firstname && user.secondname
-                                    ? `${user.firstname} ${user.secondname}`
-                                    : chatId
-                                      ? "Перейти в чат"
-                                      : "Чата нет"}
-                                </Text>
-                              </Box>
-                              {chatId && <IconChevronRight size={16} color="white" />}
-                            </Group>
-                          </UnstyledButton>
-                        );
-                      })
-                    )}
-                  </>
-                )}
-              </ScrollArea>
+            <ScrollArea h="calc(100% - 60px)" px="md">
+              {filteredChats.length === 0 && activeTab === "chats" ? (
+                <Text p="md" c="white" size="md">
+                  {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
+                </Text>
+              ) : activeTab === "chats" ? (
+                <Chats chats={filteredChats} unreadChats={unreadChats} onSelectChat={handleChatSelect} selectedChatId={selectedChat?.chatId} />
+              ) : (
+                <>
+                  {filteredContacts.length === 0 ? (
+                    <Text p="md" c="white" size="md">
+                      {searchQuery ? "Контакты не найдены" : "Нет доступных контактов"}
+                    </Text>
+                  ) : (
+                    filteredContacts.map(({ user }) => {
+                      const chatId = getChatIdWithUserMemo(user.userId);
+                      return (
+                        <UnstyledButton
+                          key={user.userId}
+                          className={classes.link}
+                          onClick={() => chatId && handleChatSelect(chatId, user.userId)}
+                          py="sm"
+                          disabled={!chatId}
+                        >
+                          <Group>
+                            <Avatar src={user.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
+                            <Box style={{ flex: 1 }}>
+                              <Text size="md" fw={500} c="white">
+                                {user.nickname}
+                              </Text>
+                              <Text size="sm" c="blue.3">
+                                {user.firstname && user.secondname
+                                  ? `${user.firstname} ${user.secondname}`
+                                  : chatId
+                                    ? "Перейти в чат"
+                                    : "Чата нет"}
+                              </Text>
+                            </Box>
+                            {chatId && <IconChevronRight size={16} color="white" />}
+                          </Group>
+                        </UnstyledButton>
+                      );
+                    })
+                  )}
+                </>
+              )}
+            </ScrollArea>
             </Box>
           </Flex>
         </AppShell.Navbar>
 
         <AppShell.Main pt="70px" pl={430}>
           <Container size="lg" p={0} h="100%">
-            {selectedChat ? (
-              <Chat chatId={selectedChat.chatId} companionId={selectedChat.companionId} />
-            ) : (
-              <Flex h="100%" justify="center" align="center" direction="column" c="dimmed">
-                <IconMessage size={48} stroke={1.5} />
-                <Text size="lg" mt="md">
-                  Выберите чат для начала общения
-                </Text>
-              </Flex>
+            {selectedChat && (
+              <Chat
+                chatId={selectedChat.chatId}
+                companionId={selectedChat.companionId}
+                addMessageToChatRef={addMessageToChatRef}
+              />
             )}
           </Container>
         </AppShell.Main>
