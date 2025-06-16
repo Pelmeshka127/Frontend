@@ -24,14 +24,14 @@ export function connectWebSocket(onMessage?: (msg: string) => void) {
   stompClient.onConnect = () => {
     console.log('[WS] Connected');
     // Подписки будут устанавливаться через subscribeToUserEvents
-    if (onMessage) {
-      // Пример подписки на эхо-топик
-      subscriptions.push(
-        stompClient?.subscribe('/topic/echo', (message) => {
-          onMessage(message.body);
-        })
-      );
-    }
+    // if (onMessage) {
+    //   // Пример подписки на эхо-топик
+    //   subscriptions.push(
+    //     stompClient?.subscribe('/topic/echo', (message) => {
+    //       onMessage(message.body);
+    //     })
+    //   );
+    // }
   };
 
   stompClient.onStompError = (frame) => {

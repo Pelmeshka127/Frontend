@@ -45,7 +45,7 @@ export function getChatIdWithUser(myChats: ChatMember[], allChatMembers: ChatMem
 export function mapChatsWithCompanions(myChats: ChatMember[], allChatMembers: ChatMember[], companions: User[], currentUser: User): ChatWithCompanion[] {
   return myChats.map((chat) => {
     const companion = allChatMembers
-      .filter((m) => m.chatId === chat.chatId && m.userId !== currentUser.userId)
+      .filter((m) => m.chatId === chat.chatId)
       .map((m) => companions.find((c) => c.userId === m.userId))
       .find(Boolean);
     return companion
