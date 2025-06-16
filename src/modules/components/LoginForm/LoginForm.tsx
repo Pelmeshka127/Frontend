@@ -26,25 +26,10 @@ const LoginForm = () => {
         }
 
         try {
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Basic ' + btoa(username + ':' + password),
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({})
-            });
-
-            if (response.ok) {
-                const nickname = await response.text();
-                login(nickname); // Используем функцию login из контекста
-                navigate('/', { replace: true });
-            } else {
-                setError('Неверный логин или пароль');
-            }
+            await login(username, password); // теперь login асинхронный!
+            navigate('/', { replace: true });
         } catch (err) {
-            setError('Ошибка сети');
+            setError('Неверный логин или пароль');
         } finally {
             setIsLoading(false);
         }
@@ -59,11 +44,11 @@ const LoginForm = () => {
                 withBorder
                 style={{ width: '100%', maxWidth: 400 }}
             >
-                <Stack spacing="lg">
-                    <Title order={2} align="center">
+                <Stack gap="lg">
+                    <Title order={2} ta="center">
                         Вход в приложение
                     </Title>
-                    <Text color="dimmed" size="sm" align="center">
+                    <Text color="dimmed" size="sm" ta="center">
                         Введите ваши данные для входа
                     </Text>
                     <form onSubmit={handleSubmit}>
@@ -86,11 +71,11 @@ const LoginForm = () => {
                             mt="sm"
                         />
                         {error && (
-                            <Text color="red" size="sm" mt="sm" align="center">
+                            <Text color="red" size="sm" mt="sm" ta="center">
                                 {error}
                             </Text>
                         )}
-                        <Group position="center" mt="lg">
+                        <Group justify="center" mt="lg">
                             <Button
                                 type="submit"
                                 size="md"

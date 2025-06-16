@@ -54,4 +54,30 @@ const sendMessage = async (chatId: number, senderId: number, text: string) => {
   return newMessage;
 };
 
+// Новый тип сообщения с текстом
+export interface MessageWithTextDto {
+  messageId: number;
+  senderId: number;
+  chatId: number;
+  text: string;
+  sendDttm: string;
+  isRead: boolean;
+  replyToMessageId?: number | null;
+  updatedDttm?: string | null;
+}
+
+// Получить последние N сообщений
+export const getLastNMessagesWithText = async (chatId: number, n: number): Promise<MessageWithTextDto[]> => {
+  const response = await fetch(`/api/message/with-text/last?chatId=${chatId}&n=${n}`);
+  if (!response.ok) throw new Error('Failed to fetch last N messages');
+  return response.json();
+};
+
+// Получить N сообщений до messageId (экран вверх)
+export const getNMessagesBeforeMessageWithText = async (chatId: number, messageId: number, n: number): Promise<MessageWithTextDto[]> => {
+  const response = await fetch(`/api/message/with-text/before?chatId=${chatId}&messageId=${messageId}&n=${n}`);
+  if (!response.ok) throw new Error('Failed to fetch messages before messageId');
+  return response.json();
+};
+
 export { getMessages, sendMessage };

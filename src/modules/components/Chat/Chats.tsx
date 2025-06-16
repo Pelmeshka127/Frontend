@@ -1,88 +1,67 @@
-import { useQuery, useQueries } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { getAllMyChats, getAllChatMembers } from "../../api/getChats";
-import { getCurrentUser, getUserById } from "../../api/getUser";
+import { UnstyledButton, Group, Avatar, Box, Text } from '@mantine/core';
+import { IconChevronRight } from '@tabler/icons-react';
+import defaultProfilePicture from '../../../assets/default_profile_picture.png';
 
-interface ChatMember {
-  chatId: number;
-  userId: number;
-  joinDttm: string;
-  leaveDttm: string | null;
+
+interface ChatsProps {
+  chats: { chatId: number; companion: { userId: number; nickname: string; firstname?: string; secondname?: string; profilePictureLink?: string } }[];
+  unreadChats: Set<number>;
+  onSelectChat: (chatId: number, companionId: number) => void;
+  selectedChatId?: number | null;
 }
 
-interface User {
-  userId: number;
-  nickname: string;
-  profilePictureLink: string;
-}
-
-const Chats = () => {
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ["currentUser"],
-    queryFn: getCurrentUser,
-  });
-
-  const { data: myChats = [] } = useQuery<ChatMember[]>({
-    queryKey: ["myChats"],
-    queryFn: getAllMyChats,
-    enabled: !!currentUser,
-  });
-
-  const { data: allChatMembers = [] } = useQuery<ChatMember[]>({
-    queryKey: ["allChatMembers"],
-    queryFn: getAllChatMembers,
-    enabled: !!currentUser,
-  });
-
-  const companionRequests = useQueries({
-    queries:
-      currentUser && allChatMembers.length > 0
-        ? myChats.map(({ chatId }) => {
-            const companionMember = allChatMembers.find(
-              (m) => m.chatId === chatId && m.userId !== currentUser.userId
-            );
-            return {
-              queryKey: ["companion", chatId],
-              queryFn: () =>
-                companionMember
-                  ? getUserById(companionMember.userId)
-                  : Promise.reject("No companion found"),
-              enabled: !!companionMember,
-            };
-          })
-        : [],
-  });
-
-  const companions = companionRequests
-    .map((result, idx) => {
-      if (result.isSuccess) {
-        return {
-          chatId: myChats[idx].chatId,
-          companion: result.data,
-        };
-      }
-      return null;
-    })
-    .filter((c): c is { chatId: number; companion: User } => !!c);
-
-  return (
-    <div>
-      <h2>Мои чаты</h2>
-      {companions.length === 0 ? (
-        <p>Нет доступных чатов</p>
-      ) : (
-        <ul>
-          {companions.map(({ chatId, companion }) => (
-            <li key={chatId}>
-              <Link to={`/chat?id=${companion.userId}&chatId=${chatId}`}>
-                {companion.nickname}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
+const Chats = ({ chats, unreadChats, onSelectChat, selectedChatId }: ChatsProps) => (
+  <>
+    {chats.length === 0 ? (
+      <p>Нет доступных чатов</p>
+    ) : (
+      chats.map(({ chatId, companion }) => {
+        const isSelected = selectedChatId === chatId;
+        return (
+          <UnstyledButton
+            key={chatId}
+            onClick={() => onSelectChat(chatId, companion.userId)}
+            style={{
+              width: '100%',
+              textAlign: 'left',
+              padding: '8px 0',
+              background: isSelected ? 'var(--mantine-color-blue-7)' : undefined,
+              color: isSelected ? 'white' : undefined,
+              borderRadius: 0,
+              fontWeight: isSelected ? 600 : undefined,
+              outline: 'none',
+              boxShadow: 'none',
+            }}
+          >
+            <Group>
+              <Avatar src={companion.profilePictureLink || defaultProfilePicture} size="md" radius="xl" style={{ marginLeft: 12 }} />
+              <Box style={{ flex: 1, marginLeft: 12 }}>
+                <Text size="md" fw={700} c="white">
+                  {companion.nickname}
+                </Text>
+                <Text size="sm" c="white">
+                  {companion.firstname && companion.secondname
+                    ? `${companion.firstname} ${companion.secondname}`
+                    : companion.nickname}
+                </Text>
+              </Box>
+              {unreadChats.has(chatId) && (
+                <span style={{
+                  display: 'inline-block',
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: 'red',
+                  marginLeft: 4
+                }} title="Есть новые сообщения" />
+              )}
+              <IconChevronRight size={16} color={isSelected ? 'white' : undefined} />
+            </Group>
+          </UnstyledButton>
+        );
+      })
+    )}
+  </>
+);
 
 export { Chats };

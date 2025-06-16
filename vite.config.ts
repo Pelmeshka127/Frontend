@@ -9,6 +9,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8081',  // Адрес бэкенда
+        ws: true,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
@@ -21,5 +22,8 @@ export default defineConfig({
       // /esm/icons/index.mjs only exports the icons statically, so no separate chunks are created
       '@tabler/icons-react': '@tabler/icons-react/dist/esm/icons/index.mjs',
     },
-  } 
+  },
+  define: {
+    global: 'window',
+  }
 })
