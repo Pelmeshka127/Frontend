@@ -12,20 +12,31 @@
   "dependencies": {
     "@mantine/core": "^7.17.6",
     "@mantine/hooks": "^7.17.6",
+<<<<<<< HEAD
     "@tanstack/react-query": "^5.76.1",
+=======
+    "@stomp/stompjs": "^7.0.0",
+    "@tanstack/react-query": "^5.80.7",
+>>>>>>> f2df4e5f1fadcc617c39516a6bd6c34a774463ec
     "lodash": "^4.17.21",
     "postcss": "^8.5.3",
     "postcss-preset-mantine": "^1.17.0",
     "postcss-simple-vars": "^7.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+<<<<<<< HEAD
     "react-router-dom": "^7.6.0"
+=======
+    "react-router-dom": "^7.6.2",
+    "sockjs-client": "^1.6.1"
+>>>>>>> f2df4e5f1fadcc617c39516a6bd6c34a774463ec
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
     "@tabler/icons-react": "^3.31.0",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@types/sockjs-client": "^1.5.4",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",

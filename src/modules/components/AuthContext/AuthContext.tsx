@@ -1,10 +1,10 @@
 // AuthContext.tsx
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { connectWebSocket, disconnectWebSocket } from '../../api/ws';
+import { connectWebSocket, disconnectWebSocket, subscribeToUserEvents } from '../../api/ws';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (nickname: string) => void;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -16,16 +16,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Проверяем сессию при старте
-    fetch('/api/user/current', { credentials: 'include' })
+    // Проверяем сессию и обновляем userData при старте
+    fetch('/api/session/info', { credentials: 'include' })
       .then(res => {
         if (res.ok) {
-          setIsAuthenticated(true);
+          return res.json();
         } else {
           setIsAuthenticated(false);
+          localStorage.removeItem('userData');
+          throw new Error('No session');
         }
       })
-      .catch(() => setIsAuthenticated(false))
+      .then(data => {
+        localStorage.setItem('userData', JSON.stringify(data));
+        setIsAuthenticated(true);
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+        localStorage.removeItem('userData');
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -41,14 +50,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isAuthenticated]);
 
-  const login = (nickname: string) => {
-    localStorage.setItem('currentUser', nickname);
+  const login = async (username: string, password: string) => {
+    // 1. Логин
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + btoa(username + ':' + password)
+      },
+      credentials: 'include'
+    });
+    if (!response.ok) throw new Error('Login failed');
+
+    // 2. Получаем session info
+    const sessionInfoResp = await fetch('/api/session/info', { credentials: 'include' });
+    if (!sessionInfoResp.ok) throw new Error('Failed to fetch session info');
+    const sessionInfo = await sessionInfoResp.json();
+
+    // 3. Сохраняем в localStorage
+    localStorage.setItem('userData', JSON.stringify(sessionInfo));
+
+    // 4. Ставим isAuthenticated
     setIsAuthenticated(true);
     connectWebSocket();
   };
 
   const logout = () => {
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem('userData');
     setIsAuthenticated(false);
     disconnectWebSocket();
   };
