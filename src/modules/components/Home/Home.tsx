@@ -19,9 +19,7 @@ import {
   Button,
   Stack,
   AppShellAside,
-  Drawer,
   Switch,
-  Button,
   createTheme,
   MantineProvider
 } from "@mantine/core";
@@ -223,8 +221,6 @@ const Home = () => {
     },
   },
 });
-
-const [themeValue, themeToggle] = useToggle([theme, theme1]);
 
   return (
     <>
