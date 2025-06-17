@@ -1,3 +1,3 @@
-import SettingsCard from "./Settings";
+import ThemeContext from "./Settings";
 
-export { SettingsCard }
+export { ThemeContext }

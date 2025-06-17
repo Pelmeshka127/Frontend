@@ -36,9 +36,10 @@ import {
 import defaultProfilePicture from "../../../assets/default_profile_picture.png";
 import classes from "./Navbar.module.css";
 import { Chat } from "../Chat";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useToggle  } from "@mantine/hooks";
 import { useAuth } from "../AuthContext/AuthContext";
 import { Chats } from '../Chat/Chats';
+import { useTheme } from '../Settings/ThemeContext';
 import { subscribeToUserEvents, connectWebSocket } from '../../api/ws';
 import {
   ChatMember,
@@ -179,22 +180,8 @@ const Home = () => {
     selectedChatIdRef.current = selectedChat?.chatId ?? null;
   }, [selectedChat]);
 
-  const theme1 = createTheme({
+  const themeDark = createTheme({
   colors: {
-    // Add your color
-    deepBlue: [
-      '#eef3ff',
-      '#dce4f5',
-      '#b9c7e2',
-      '#94a8d0',
-      '#748dc1',
-      '#5f7cb8',
-      '#5474b4',
-      '#44639f',
-      '#39588f',
-      '#2d4b81',
-    ],
-    // or replace default theme color
     blue: [
       '#eef3ff',
       '#dee2f2',
@@ -207,23 +194,22 @@ const Home = () => {
       '#424e88',
       '#364379',
     ],
+    
   },
+
+  defaultRadius: 'xl',
 
   shadows: {
     md: '1px 1px 3px rgba(0, 0, 0, .25)',
     xl: '5px 5px 3px rgba(0, 0, 0, .25)',
   },
 
-  headings: {
-    fontFamily: 'Roboto, sans-serif',
-    sizes: {
-      h1: { fontSize: 36 },
-    },
-  },
 });
 
+const { themeType, toggleTheme } = useTheme();
+
   return (
-    <>
+    <MantineProvider theme = {themeType ? themeDark : theme}>
       <Drawer
         opened={settingsOpened}
         onClose={closeSettings}
@@ -238,6 +224,15 @@ const Home = () => {
           content: { background: theme.colors.blue[9] },
         }}
       >
+        <Switch
+            label="Theme"
+            size="md"
+            color="dark.4"
+            onLabel={<IconSun size={16} stroke={2.5} color="var(--mantine-color-yellow-4)" />}
+            offLabel={<IconMoonStars size={16} stroke={2.5} color="var(--mantine-color-blue-6)" />}
+            onChange={() => toggleTheme}
+          />
+
         <Button color="red" onClick={handleLogout} fullWidth>
           Logout
         </Button>
@@ -379,7 +374,7 @@ const Home = () => {
           </Container>
         </AppShell.Main>
       </AppShell>
-    </>
+    </MantineProvider>
   );
 };
 
