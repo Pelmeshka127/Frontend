@@ -32,10 +32,6 @@
   &[data-active] {
     background-color: var(--mantine-color-blue-7);
     color: var(--mantine-color-white);
-
-    .mantine-Text-root {
-      color: var(--mantine-color-blue-1) !important;
-    }
   }
 }
 

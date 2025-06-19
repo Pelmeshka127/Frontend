@@ -68,3 +68,10 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.chat-selected {
+  color: white !important;
+}
+.chat-unselected {
+  color: #fff !important;
+}

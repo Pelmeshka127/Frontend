@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { UnstyledButton, Group, Avatar, Box, Text } from '@mantine/core';
 import { IconChevronRight } from '@tabler/icons-react';
 import defaultProfilePicture from '../../../assets/default_profile_picture.png';
@@ -6,11 +7,11 @@ import defaultProfilePicture from '../../../assets/default_profile_picture.png';
 interface ChatsProps {
   chats: { chatId: number; companion: { userId: number; nickname: string; firstname?: string; secondname?: string; profilePictureLink?: string } }[];
   unreadChats: Set<number>;
-  onSelectChat: (chatId: number, companionId: number) => void;
   selectedChatId?: number | null;
+  onSelectChat: (chatId: number, companionId: number) => void;
 }
 
-const Chats = ({ chats, unreadChats, onSelectChat, selectedChatId }: ChatsProps) => {
+const Chats = ({ chats, unreadChats, selectedChatId, onSelectChat }: ChatsProps) => {
   let currentNickname = '';
   try {
     const userData = localStorage.getItem('userData');
@@ -21,9 +22,6 @@ const Chats = ({ chats, unreadChats, onSelectChat, selectedChatId }: ChatsProps)
   } catch (e) {
     console.error('localStorage error:', e);
   }
-
-  console.log('Исходный chats:', chats.map(c => c.companion.nickname));
-  console.log('currentNickname:', currentNickname);
 
   const sortedChats = [...chats].sort((a, b) => {
     if (a.companion.nickname === currentNickname) return -1;
@@ -37,31 +35,25 @@ const Chats = ({ chats, unreadChats, onSelectChat, selectedChatId }: ChatsProps)
     return 0;
   });
 
-  console.log('Отсортированный chats:', sortedChats.map(c => c.companion.nickname));
-  console.log('unreadChats:', Array.from(unreadChats));
-  sortedChats.forEach(c => {
-    console.log(`chatId: ${c.chatId}, unread: ${unreadChats.has(c.chatId)}`);
-  });
-
   return (
     <>
       {sortedChats.length === 0 ? (
         <p>Нет доступных чатов</p>
       ) : (
         sortedChats.map(({ chatId, companion }) => {
-          const isSelected = selectedChatId === chatId;
+          const isSelected = Number(selectedChatId) === Number(chatId);
           return (
             <UnstyledButton
               key={chatId}
               onClick={() => onSelectChat(chatId, companion.userId)}
+              className={isSelected ? 'chat-selected' : 'chat-unselected'}
               style={{
                 width: '100%',
                 textAlign: 'left',
                 padding: '8px 0',
-                background: isSelected ? 'var(--mantine-color-blue-7)' : undefined,
-                color: isSelected ? 'white' : undefined,
+                backgroundColor: isSelected ? 'var(--mantine-color-blue-7)' : 'transparent',
                 borderRadius: 0,
-                fontWeight: isSelected ? 600 : undefined,
+                fontWeight: isSelected ? 600 : 400,
                 outline: 'none',
                 boxShadow: 'none',
               }}
@@ -69,10 +61,17 @@ const Chats = ({ chats, unreadChats, onSelectChat, selectedChatId }: ChatsProps)
               <Group>
                 <Avatar src={companion.profilePictureLink || defaultProfilePicture} size="md" radius="xl" style={{ marginLeft: 12 }} />
                 <Box style={{ flex: 1, marginLeft: 12 }}>
-                  <Text size="md" fw={700} c="white">
+                  <Text
+                    size="md"
+                    fw={700}
+                    style={{ color: isSelected ? 'white' : '#1a1a1a', transition: 'color 0.2s' }}
+                  >
                     {companion.nickname}
                   </Text>
-                  <Text size="sm" c="white">
+                  <Text
+                    size="sm"
+                    style={{ color:  'white' }}
+                  >
                     {companion.firstname && companion.secondname
                       ? `${companion.firstname} ${companion.secondname}`
                       : companion.nickname}
