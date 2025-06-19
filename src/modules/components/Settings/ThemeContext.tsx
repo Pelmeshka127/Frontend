@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getSettings } from '../../api/settings/getSettings.tsx';
+import { getSettings } from '../../api/getSettings.tsx';
 import { updateTheme } from '../../api/settings/updateTheme.tsx';
 
 
