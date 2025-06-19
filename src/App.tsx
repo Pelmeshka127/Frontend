@@ -5,7 +5,7 @@ import { User } from './modules/components/User/index';
 import { NoMatch } from './components/NoMatch';
 import { Home } from './modules/components/Home';
 import { Chat, Chats } from './modules/components/Chat';
-import { Contact } from './modules/components/Contacts';
+import Search from './modules/components/Search';
 import LoginForm from './modules/components/LoginForm';
 import '@mantine/core/styles.css';
 import { MantineProvider } from '@mantine/core';
@@ -26,7 +26,7 @@ const AppRoutes = () => {
       <Route path="/user" element={isAuthenticated ? <User /> : <Navigate to="/login" replace />} />
       <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/login" replace />} />
       <Route path="/chats" element={isAuthenticated ? <Chats /> : <Navigate to="/login" replace />} />
-      <Route path="/contacts" element={isAuthenticated ? <Contact /> : <Navigate to="/login" replace />} />
+      <Route path="/search" element={isAuthenticated ? <Search /> : <Navigate to="/login" replace />} />
       <Route path="*" element={<NoMatch />} />
     </Routes>
   );
