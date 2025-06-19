@@ -1,36 +1,48 @@
-import { useDisclosure } from '@mantine/hooks';
-import { Drawer, Button } from '@mantine/core';
-import { Switch } from '@mantine/core';
-import { IconSun, IconMoonStars } from '@tabler/icons-react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { getSettings, updateTheme } from '../../api/getSettings.tsx';
 
-interface SettingsProps {
-  opened: boolean;
-  onClose: () => void;
-}
 
-export function DarkTheme({ opened, onClose }: SettingsProps) {
-  const [opened, { open, close }] = useDisclosure(false);
+type SettingsType = {
+  themeType: boolean;
+  toggleTheme: () => void;
+};
+
+const ThemeContext = createContext<SettingsType>({
+  themeType: false,
+  toggleTheme: () => {},
+});
+
+export const Settings: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [themeType, setThemeType] = useState<boolean>(false);
+
+  useEffect(() => {
+    const loadTheme = async () => {
+      try {
+        const settings = await getSettings();
+        setThemeType(settings.darkTheme);
+      } catch (error) {
+        console.error('Failed to load theme settings', error);
+      }
+    };
+    loadTheme();
+  }, []);
+
+  const toggleTheme = async () => {
+    const newTheme = !themeType;
+    setThemeType(newTheme);
+    try {
+      await updateTheme(newTheme);
+    } catch (error) {
+      console.error('Failed to update theme', error);
+      setThemeType(!newTheme); // Rollback on error
+    }
+  };
+
   return (
-    <>
-      <Drawer opened={opened} onClose={close} title="Settings" position="right">
-        
-          <Switch
-            label="Theme"
-            size="md"
-            color="dark.4"
-            onLabel={<IconSun size={16} stroke={2.5} color="var(--mantine-color-yellow-4)" />}
-            offLabel={<IconMoonStars size={16} stroke={2.5} color="var(--mantine-color-blue-6)" />}
-          />
-        
-      </Drawer>
-
-      <Button variant="default" onClick={open}>
-        Open Drawer
-      </Button>
-    </>
+    <ThemeContext.Provider value={{ themeType, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
   );
-}
+};
 
-
-export default DarkTheme;
-
+export const useTheme = () => useContext(ThemeContext);

@@ -25,6 +25,14 @@ export interface Contact {
 }
 
 export interface UserData {
+  userId: number;
+  darkTheme: boolean;
+  showDateOfBirth: boolean;
+  chatYourselfDefault: boolean;
+  contactAutoAccept: boolean;
+}
+
+export interface UserData {
   currentUser: User;
   myChats: ChatMember[];
   allChatMembers: ChatMember[];

@@ -39,7 +39,7 @@ import { Chat } from "../Chat";
 import { useDisclosure, useToggle  } from "@mantine/hooks";
 import { useAuth } from "../AuthContext/AuthContext";
 import { Chats } from '../Chat/Chats';
-import { useTheme } from '../Settings/ThemeContext';
+import { Settings, useTheme } from '../Settings/Settings';
 import { subscribeToUserEvents, connectWebSocket } from '../../api/ws';
 import {
   ChatMember,
@@ -207,10 +207,8 @@ const Home = () => {
 });
 
 const { themeType, toggleTheme } = useTheme();
-
-
   return (
-    <MantineProvider theme = {themeType ? themeDark : theme}>
+    <Settings>
       <Drawer
         opened={settingsOpened}
         onClose={closeSettings}
@@ -233,6 +231,7 @@ const { themeType, toggleTheme } = useTheme();
             offLabel={<IconMoonStars size={16} stroke={2.5} color="var(--mantine-color-blue-6)" />}
             onChange={() => toggleTheme}
           />
+          <p>Current theme: {themeType ? 'Dark' : 'Light'}</p>
 
         <Button color="red" onClick={handleLogout} fullWidth>
           Logout
@@ -375,7 +374,7 @@ const { themeType, toggleTheme } = useTheme();
           </Container>
         </AppShell.Main>
       </AppShell>
-    </MantineProvider>
+    </Settings>
   );
 };
 

@@ -8,6 +8,7 @@ import { Chat, Chats } from './modules/components/Chat';
 import { Contact } from './modules/components/Contacts';
 import LoginForm from './modules/components/LoginForm';
 import RegistrationForm from './modules/components/RegistrationForm';
+import { Settings } from './modules/components/Settings';
 import '@mantine/core/styles.css';
 import { MantineProvider } from '@mantine/core';
 import { AuthProvider, useAuth } from './modules/components/AuthContext/AuthContext'; // Импортируем AuthProvider и useAuth
@@ -29,6 +30,7 @@ const AppRoutes = () => {
       <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/login" replace />} />
       <Route path="/chats" element={isAuthenticated ? <Chats /> : <Navigate to="/login" replace />} />
       <Route path="/contacts" element={isAuthenticated ? <Contact /> : <Navigate to="/login" replace />} />
+      <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
       <Route path="*" element={<NoMatch />} />
     </Routes>
   );

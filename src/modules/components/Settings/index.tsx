@@ -1,3 +1,3 @@
-import ThemeContext from "./Settings";
+import { Settings } from "./Settings.tsx";
 
-export { ThemeContext }
+export { Settings }

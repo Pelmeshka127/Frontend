@@ -7,25 +7,17 @@ interface SettingsParams {
 }
 
 const getSettings = async () => {
-  const response = await fetch('/api/settings', {
-    method: 'GET',
-  });
-
+  const response = await fetch("/api/settings/get")
   if (!response.ok) {
     throw new Error('Failed to fetch settings');
   }
-
-  const settings = response.json;
-
-  return settings;
+  const settings = response.json()
+  return settings
 };
 
-const updateTheme = async (darkTheme: boolean) => {
-  const response = await fetch('/api/settings/theme', {
-    method: 'PUT',
-    body: JSON.stringify({ darkTheme })
-  });
 
+const updateTheme = async (darkTheme: boolean) => {
+  const response = await fetch(`/api/settings/theme?darkTheme=${darkTheme}`);
   if (!response.ok) {
     throw new Error('Failed to update theme');
   }
