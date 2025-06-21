@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AppShell,
@@ -39,7 +39,7 @@ import { Chat } from "../Chat";
 import { useDisclosure, useToggle  } from "@mantine/hooks";
 import { useAuth } from "../AuthContext/AuthContext";
 import { Chats } from '../Chat/Chats';
-import { Settings, useTheme } from '../Settings/Settings';
+import { Settings } from '../Settings/Settings';
 import { subscribeToUserEvents, connectWebSocket } from '../../api/ws';
 import {
   ChatMember,
@@ -165,38 +165,61 @@ const Home = () => {
     selectedChatIdRef.current = selectedChat?.chatId ?? null;
   }, [selectedChat]);
 
-  const { themeType, toggleTheme } = useTheme();
+  const themeLight =  createTheme({
+
+});
+
+const themeDark = createTheme({
+  colors: {
+    blue: [
+      '#eef3ff',
+      '#dee2f2',
+      '#bdc2de',
+      '#98a0ca',
+      '#7a84ba',
+      '#6672b0',
+      '#5c68ac',
+      '#4c5897',
+      '#424e88',
+      '#364379',
+    ],
+    
+  },
+
+  defaultRadius: 'xl',
+
+  shadows: {
+    md: '1px 1px 3px rgba(0, 0, 0, .25)',
+    xl: '5px 5px 3px rgba(0, 0, 0, .25)',
+  },
+
+});
+
+const { themeType, jsx: SettingsUI } = Settings();
 
   return (
-    <Settings>
-      <Drawer
-        opened={settingsOpened}
-        onClose={closeSettings}
-        title="Настройки"
-        position="right"
-        size={400}
-        overlayProps={{ opacity: 0 }}
-        withCloseButton={true}
-        styles={{
-          body: { paddingTop: 20, background: theme.colors.blue[9] },
-          header: { borderBottom: "1px solid #eee", background: theme.colors.blue[9] },
-          content: { background: theme.colors.blue[9] },
-        }}
-      >
-        <Switch
-            label="Тема"
-            size="md"
-            color="dark.4"
-            defaultChecked = {!themeType}
-            onLabel={<IconSun size={16} stroke={2.5} color="var(--mantine-color-yellow-4)" />}
-            offLabel={<IconMoonStars size={16} stroke={2.5} color="var(--mantine-color-blue-6)" />}
-            onChange={() => toggleTheme}
-          />
+    <MantineProvider theme = {themeType ? themeDark : themeLight}>
+        <Drawer
+          opened={settingsOpened}
+          onClose={closeSettings}
+          title="Настройки"
+          position="right"
+          size={400}
+          overlayProps={{ opacity: 0 }}
+          withCloseButton={true}
+          //styles={{
+          //  body: { paddingTop: 20, background: theme.colors.blue[9] },
+          //  header: { borderBottom: "1px solid #eee", background: theme.colors.blue[9] },
+          //  content: { background: theme.colors.blue[9] },
+          //}}
+        >
 
-        <Button color="red" onClick={handleLogout} fullWidth>
-          Logout
-        </Button>
-      </Drawer>
+          {SettingsUI}          
+  
+          <Button color="red" onClick={handleLogout} fullWidth>
+            Logout
+          </Button>
+        </Drawer>
       <AppShell
         padding="md"
         header={{ height: 70 }}
@@ -299,7 +322,7 @@ const Home = () => {
           </Container>
         </AppShell.Main>
       </AppShell>
-    </Settings>
+    </MantineProvider>
   );
 };
 

@@ -1,49 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getSettings, updateTheme } from '../../api/getSettings.tsx';
-import { MantineProvider, useMantineTheme, createTheme } from "@mantine/core";
+import { MantineProvider, useMantineTheme, createTheme, Button, Drawer, Switch } from "@mantine/core";
+import { IconMoonStars, IconSun } from '@tabler/icons-react';
+import { useDisclosure } from '@mantine/hooks';
+import { useAuth } from '../AuthContext/AuthContext.tsx';
 
 
-type SettingsType = {
-  themeType: boolean;
-  toggleTheme: () => void;
-};
 
-const ThemeContext = createContext<SettingsType>({
-  themeType: false,
-  toggleTheme: () => {},
-});
-
-const themeLight =  createTheme({
-
-});
-
-const themeDark = createTheme({
-  colors: {
-    blue: [
-      '#eef3ff',
-      '#dee2f2',
-      '#bdc2de',
-      '#98a0ca',
-      '#7a84ba',
-      '#6672b0',
-      '#5c68ac',
-      '#4c5897',
-      '#424e88',
-      '#364379',
-    ],
-    
-  },
-
-  defaultRadius: 'xl',
-
-  shadows: {
-    md: '1px 1px 3px rgba(0, 0, 0, .25)',
-    xl: '5px 5px 3px rgba(0, 0, 0, .25)',
-  },
-
-});
-
-export const Settings: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const Settings = () => {
   const [themeType, setThemeType] = useState<boolean>(false);
 
   useEffect(() => {
@@ -70,13 +34,19 @@ export const Settings: React.FC<{ children: React.ReactNode }> = ({ children }) 
     }
   };
 
-  return (
-    <ThemeContext.Provider value ={{ themeType, toggleTheme }}>
-       <MantineProvider theme = {themeType ? themeDark : themeLight}>
-      {children}
-      </MantineProvider>
-    </ThemeContext.Provider>
-  );
-};
+  return {
+    themeType: themeType,
+    jsx: (
+      <Switch
+        label="Тема"
+        size="md"
+        color="dark.4"
+        defaultChecked = {!themeType}
+        onLabel={<IconSun size={16} stroke={2.5} color="var(--mantine-color-yellow-4)" />}
+        offLabel={<IconMoonStars size={16} stroke={2.5} color="var(--mantine-color-blue-6)" />}
+        onChange={() => toggleTheme()}
+      />
+    ),
+  };
 
-export const useTheme = () => useContext(ThemeContext);
+};

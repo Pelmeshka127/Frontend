@@ -29,7 +29,6 @@ const AppRoutes = () => {
       <Route path="/user" element={isAuthenticated ? <User /> : <Navigate to="/login" replace />} />
       <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/login" replace />} />
       <Route path="/chats" element={isAuthenticated ? <Chats /> : <Navigate to="/login" replace />} />
-      <Route path="/contacts" element={isAuthenticated ? <Contact /> : <Navigate to="/login" replace />} />
       <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
       <Route path="/search" element={isAuthenticated ? <Search /> : <Navigate to="/login" replace />} />
       <Route path="*" element={<NoMatch />} />
