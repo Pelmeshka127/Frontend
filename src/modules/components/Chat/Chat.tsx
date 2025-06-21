@@ -18,7 +18,7 @@ interface ChatProps {
   addMessageToChatRef?: React.MutableRefObject<null | ((chatId: number, message: any) => void)>;
 }
 
-const PAGE_SIZE = 40;
+const PAGE_SIZE = 80;
 
 const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef }) => {
   const [messages, setMessages] = useState<MessageWithTextDto[]>([]);
@@ -33,7 +33,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
   const oldScrollTopRef = useRef<number | null>(null);
   const loadingMoreRef = useRef(false);
   const [optimisticId, setOptimisticId] = useState<number | null>(null);
-  const prevMessagesLength = useRef(messages.length);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const userDataRaw = localStorage.getItem('userData');
   let currentUser = null;
@@ -178,7 +178,6 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
 
   if (!chatId) return <div className="error-message">Чат не найден</div>;
   if (!currentUser || !companion) return <div className="error-message">Ошибка загрузки данных</div>;
-  if (currentUser.userId === companionId) return <div className='error-message'>Нельзя писать самому себе</div>;
 
   return (
     <Stack className="chat-container">

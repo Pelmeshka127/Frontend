@@ -28,7 +28,7 @@ import {
   IconSettings,
   IconMessage,
   IconChevronRight,
-  IconUsers,
+  IconUserPlus,
   IconMessages,
   IconSun,
   IconMoonStars
@@ -50,6 +50,7 @@ import {
   getChatIdWithUser,
   mapChatsWithCompanions,
 } from './Home.utils';
+import Search from "../Search/Search";
 
 const Home = () => {
   const theme = useMantineTheme();
@@ -86,12 +87,6 @@ const Home = () => {
   // companions: User[] -> ChatWithCompanion[] (сопоставляем chatId)
   const chatWithCompanions: ChatWithCompanion[] = mapChatsWithCompanions(myChats, allChatMembers, companions, currentUser);
 
-  // Контактные пользователи (ищем их среди companions)
-  const contactUsers = contacts.map((contact) => {
-    const user = companions.find((c) => c.userId === contact.userId);
-    return user ? { contact, user } : null;
-  }).filter((entry): entry is { contact: Contact; user: User } => !!entry);
-
   const filteredChats = chatWithCompanions.filter((chat) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -99,16 +94,6 @@ const Home = () => {
       chat.companion.nickname.toLowerCase().includes(query) ||
       (chat.companion.firstname && chat.companion.firstname.toLowerCase().includes(query)) ||
       (chat.companion.secondname && chat.companion.secondname.toLowerCase().includes(query))
-    );
-  });
-
-  const filteredContacts = contactUsers.filter((entry) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      entry.user.nickname.toLowerCase().includes(query) ||
-      (entry.user.firstname && entry.user.firstname.toLowerCase().includes(query)) ||
-      (entry.user.secondname && entry.user.secondname.toLowerCase().includes(query))
     );
   });
 
@@ -258,14 +243,14 @@ const Home = () => {
                   c="white"
                 />
                 <NavLink
-                  leftSection={<IconUsers size={24} color="white" />}
-                  active={activeTab === "contacts"}
-                  onClick={() => handleTabChange("contacts")}
+                  leftSection={<IconUserPlus size={24} color="white" />}
+                  active={activeTab === "search"}
+                  onClick={() => handleTabChange("search")}
                   variant="subtle"
                   style={{
                     borderRadius: 0,
-                    borderLeft: activeTab === "contacts" ? `4px solid ${theme.colors.blue[5]}` : "none",
-                    backgroundColor: activeTab === "contacts" ? theme.colors.blue[7] : "transparent",
+                    borderLeft: activeTab === "search" ? `4px solid ${theme.colors.blue[5]}` : "none",
+                    backgroundColor: activeTab === "search" ? theme.colors.blue[7] : "transparent",
                   }}
                   c="white"
                 />
@@ -284,55 +269,20 @@ const Home = () => {
                   className={classes.searchInput}
                   size="md"
                 />
-            </Box>
+                
+              </Box>
 
-            <ScrollArea h="calc(100% - 60px)" px="md">
-              {filteredChats.length === 0 && activeTab === "chats" ? (
-                <Text p="md" c="white" size="md">
-                  {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
-                </Text>
-              ) : activeTab === "chats" ? (
-                <Chats chats={filteredChats} unreadChats={unreadChats} onSelectChat={handleChatSelect} selectedChatId={selectedChat?.chatId} />
-              ) : (
-                <>
-                  {filteredContacts.length === 0 ? (
-                    <Text p="md" c="white" size="md">
-                      {searchQuery ? "Контакты не найдены" : "Нет доступных контактов"}
-                    </Text>
-                  ) : (
-                    filteredContacts.map(({ user }) => {
-                      const chatId = getChatIdWithUserMemo(user.userId);
-                      return (
-                        <UnstyledButton
-                          key={user.userId}
-                          className={classes.link}
-                          onClick={() => chatId && handleChatSelect(chatId, user.userId)}
-                          py="sm"
-                          disabled={!chatId}
-                        >
-                          <Group>
-                            <Avatar src={user.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
-                            <Box style={{ flex: 1 }}>
-                              <Text size="md" fw={500} c="white">
-                                {user.nickname}
-                              </Text>
-                              <Text size="sm" c="blue.3">
-                                {user.firstname && user.secondname
-                                  ? `${user.firstname} ${user.secondname}`
-                                  : chatId
-                                    ? "Перейти в чат"
-                                    : "Чата нет"}
-                              </Text>
-                            </Box>
-                            {chatId && <IconChevronRight size={16} color="white" />}
-                          </Group>
-                        </UnstyledButton>
-                      );
-                    })
-                  )}
-                </>
-              )}
-            </ScrollArea>
+              <ScrollArea h="calc(100% - 60px)" px="md">
+                {filteredChats.length === 0 && activeTab === "chats" ? (
+                  <Text p="md" c="white" size="md">
+                    {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
+                  </Text>
+                ) : activeTab === "chats" ? (
+                  <Chats chats={filteredChats} unreadChats={unreadChats} onSelectChat={handleChatSelect} selectedChatId={selectedChat?.chatId} />
+                ) : (
+                  <Search value={searchQuery} />
+                )}
+              </ScrollArea>
             </Box>
           </Flex>
         </AppShell.Navbar>
