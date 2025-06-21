@@ -180,33 +180,8 @@ const Home = () => {
     selectedChatIdRef.current = selectedChat?.chatId ?? null;
   }, [selectedChat]);
 
-  const themeDark = createTheme({
-  colors: {
-    blue: [
-      '#eef3ff',
-      '#dee2f2',
-      '#bdc2de',
-      '#98a0ca',
-      '#7a84ba',
-      '#6672b0',
-      '#5c68ac',
-      '#4c5897',
-      '#424e88',
-      '#364379',
-    ],
-    
-  },
+  const { themeType, toggleTheme } = useTheme();
 
-  defaultRadius: 'xl',
-
-  shadows: {
-    md: '1px 1px 3px rgba(0, 0, 0, .25)',
-    xl: '5px 5px 3px rgba(0, 0, 0, .25)',
-  },
-
-});
-
-const { themeType, toggleTheme } = useTheme();
   return (
     <Settings>
       <Drawer
@@ -224,14 +199,14 @@ const { themeType, toggleTheme } = useTheme();
         }}
       >
         <Switch
-            label="Theme"
+            label="Тема"
             size="md"
             color="dark.4"
+            defaultChecked = {!themeType}
             onLabel={<IconSun size={16} stroke={2.5} color="var(--mantine-color-yellow-4)" />}
             offLabel={<IconMoonStars size={16} stroke={2.5} color="var(--mantine-color-blue-6)" />}
             onChange={() => toggleTheme}
           />
-          <p>Current theme: {themeType ? 'Dark' : 'Light'}</p>
 
         <Button color="red" onClick={handleLogout} fullWidth>
           Logout
