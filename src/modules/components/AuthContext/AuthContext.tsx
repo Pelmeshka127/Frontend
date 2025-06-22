@@ -1,6 +1,6 @@
 // AuthContext.tsx
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { connectWebSocket, disconnectWebSocket, subscribeToUserEvents } from '../../api/ws';
+import { connectWebSocket, disconnectWebSocket } from '../../api/ws';
 
 interface AuthContextType {
   isAuthenticated: boolean;
