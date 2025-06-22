@@ -1,9 +1,8 @@
-// LoginForm.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, TextInput, PasswordInput, Button, Group, Title, Text, Center, Stack } from '@mantine/core';
 import { useMantineTheme } from '@mantine/core';
-import { useAuth } from '../AuthContext/AuthContext'; // Импортируем useAuth
+import { useAuth } from '../AuthContext/AuthContext';
 
 const LoginForm = () => {
     const [username, setUsername] = useState('');
@@ -12,7 +11,7 @@ const LoginForm = () => {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
     const theme = useMantineTheme();
-    const { login } = useAuth(); // Получаем функцию login из контекста
+    const { login } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,7 +25,7 @@ const LoginForm = () => {
         }
 
         try {
-            await login(username, password); // теперь login асинхронный!
+            await login(username, password);
             navigate('/', { replace: true });
         } catch (err) {
             setError('Неверный логин или пароль');
@@ -88,6 +87,15 @@ const LoginForm = () => {
                             </Button>
                         </Group>
                     </form>
+                    <Group justify="center">
+                        <Button
+                            variant="outline"
+                            size="md"
+                            onClick={() => navigate('/register')}
+                        >
+                            Зарегистрироваться
+                        </Button>
+                    </Group>
                 </Stack>
             </Card>
         </Center>
