@@ -34,6 +34,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
   const loadingMoreRef = useRef(false);
   const [optimisticId, setOptimisticId] = useState<number | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<number>>(new Set());
 
   const userDataRaw = localStorage.getItem('userData');
   let currentUser = null;
@@ -165,6 +166,16 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
         if (incomingChatId === chatId) {
           setMessages(prev => {
             if (prev.some(m => m.messageId === message.messageId)) return prev;
+            // Добавляем id сообщения в список анимируемых
+            setAnimatedMessageIds(ids => new Set(ids).add(message.messageId));
+            // Удаляем id из списка через 400мс (длительность анимации)
+            setTimeout(() => {
+              setAnimatedMessageIds(ids => {
+                const newIds = new Set(ids);
+                newIds.delete(message.messageId);
+                return newIds;
+              });
+            }, 400);
             return [...prev, message];
           });
           setShouldScrollToBottom(true);
@@ -213,7 +224,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
           const isCurrentUser = message.senderId === currentUser.userId;
           const { time, date } = formatDateTime(message.sendDttm);
           const senderNickname = isCurrentUser ? currentUser.nickname : companion.nickname;
-          const className = message.messageId === optimisticId ? 'chat-message-appear' : '';
+          const className = animatedMessageIds.has(message.messageId) ? 'chat-message-appear' : '';
           return (
             <ChatMessage
               key={message.messageId}
