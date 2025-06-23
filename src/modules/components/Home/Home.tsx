@@ -35,6 +35,7 @@ import {
   User,
   ChatWithCompanion,
   mapChatsWithCompanions,
+  UserData
 } from './Home.utils';
 import Search from "../Search/Search";
 import { UserModal } from "../UserModal/UserModal";
@@ -184,6 +185,51 @@ const Home = () => {
     selectedChatIdRef.current = selectedChat?.chatId ?? null;
   }, [selectedChat]);
 
+  const createPrivateChat = async (creatorId: number, companionId: number) => {
+    const response = await fetch("/api/chat/private", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ creatorId, companionId }),
+    });
+    if (!response.ok) throw new Error("Failed to create private chat");
+    return await response.json();
+  };
+
+  const handleCreateChat = async () => {
+    if (!selectedUser || !userData) return;
+    try {
+      const res = await createPrivateChat(userData.currentUser.userId, selectedUser.userId);
+      // Обновляем userData в localStorage
+      const newChat = { chatId: res.chatId, userId: res.companion.userId as any, joinDttm: res.createdDttm, leaveDttm: null };
+      const newCompanion = {
+        userId: res.companion.userId,
+        nickname: res.companion.nickname,
+        firstname: res.companion.firstname,
+        secondname: res.companion.secondname,
+        profilePictureLink: res.companion.profilePictureLink,
+        dateOfBirth: res.companion.dateOfBirth,
+        phone: res.companion.phone,
+        email: res.companion.email,
+        active: res.companion.active
+      };
+      const updatedUserData = {
+        ...userData,
+        myChats: [...userData.myChats, newChat],
+        companions: [...userData.companions, newCompanion]
+      };
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      setUserData(updatedUserData);
+      setIsCompanion(true);
+      // Открываем чат сразу после создания
+      setSelectedChat({ chatId: res.chatId, companionId: res.companion.userId });
+      closeUserModal();
+    } catch (e) {
+      // Logging only in English!
+    }
+  };
+
   return (
     <>
       <Drawer
@@ -212,6 +258,7 @@ const Home = () => {
           currentUser={currentUser}
           isCompanion={isCompanion}
           onOpenChat={handleOpenChat}
+          onCreateChat={handleCreateChat}
           opened={isUserModalOpen}
           onClose={closeUserModal}
         />

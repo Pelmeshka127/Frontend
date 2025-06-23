@@ -19,6 +19,7 @@ interface UserModalProps {
   currentUser: DotUser;
   isCompanion: boolean;
   onOpenChat: () => void;
+  onCreateChat: () => void;
   opened: boolean;
   onClose: () => void;
 }
@@ -28,6 +29,7 @@ export function UserModal({
   currentUser, 
   isCompanion,
   onOpenChat,
+  onCreateChat,
   opened, 
   onClose 
 }: UserModalProps) {
@@ -100,7 +102,7 @@ export function UserModal({
             <Button 
               leftSection={<IconMessage size={18} />}
               radius="md" 
-              onClick={isCompanion ? onOpenChat : () => {}}
+              onClick={isCompanion ? onOpenChat : onCreateChat}
             >
               {isCompanion ? "Перейти к чату" : "Создать чат"}
             </Button>
