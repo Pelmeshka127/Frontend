@@ -11,9 +11,7 @@ import {
   Input,
   Text,
   useMantineTheme,
-  Loader,
   ScrollArea,
-  UnstyledButton,
   ActionIcon,
   NavLink,
   Drawer,
@@ -29,7 +27,6 @@ import {
   IconSearch,
   IconSettings,
   IconMessage,
-  IconChevronRight,
   IconUserPlus,
   IconMessages,
   IconSun,
@@ -44,15 +41,13 @@ import { Chats } from '../Chat/Chats';
 import { Settings } from '../Settings/Settings';
 import { subscribeToUserEvents, connectWebSocket } from '../../api/ws';
 import {
-  ChatMember,
   User,
   ChatWithCompanion,
-  Contact,
-  UserData,
-  getChatIdWithUser,
   mapChatsWithCompanions,
+  UserData
 } from './Home.utils';
 import Search from "../Search/Search";
+import { UserModal } from "../UserModal/UserModal";
 
 const Home = () => {
   const theme = useMantineTheme();
@@ -66,11 +61,26 @@ const Home = () => {
   const addMessageToChatRef = useRef<null | ((chatId: number, message: any) => void)>(null);
   const selectedChatIdRef = useRef<number | null>(null);
 
+  // Состояния для управления модальным окном пользователя
+  const [isUserModalOpen, { open: openUserModal, close: closeUserModal }] = useDisclosure(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isCompanion, setIsCompanion] = useState(false);
+
   // Загружаем userData из localStorage
   const [userData, setUserData] = useState<UserData | null>(() => {
     const data = localStorage.getItem('userData');
     return data ? JSON.parse(data) : null;
   });
+
+  // Проверяем, есть ли выбранный пользователь в companions
+  useEffect(() => {
+    if (selectedUser && userData) {
+      const companionExists = userData.companions.some(
+        companion => companion.userId === selectedUser.userId
+      );
+      setIsCompanion(companionExists);
+    }
+  }, [selectedUser, userData]);
 
   // Если данных нет — показываем ошибку
   if (!userData) {
@@ -84,7 +94,7 @@ const Home = () => {
     );
   }
 
-  const { currentUser, myChats, allChatMembers, companions, contacts } = userData;
+  const { currentUser, myChats, allChatMembers, companions } = userData;
 
   // companions: User[] -> ChatWithCompanion[] (сопоставляем chatId)
   const chatWithCompanions: ChatWithCompanion[] = mapChatsWithCompanions(myChats, allChatMembers, companions, currentUser);
@@ -99,8 +109,26 @@ const Home = () => {
     );
   });
 
-  // Функция для получения chatId по userId
-  const getChatIdWithUserMemo = (userId: number): number | null => getChatIdWithUser(myChats, allChatMembers, userId);
+  // Обработчик выбора пользователя в поиске
+  const handleUserSelect = (user: User) => {
+    setSelectedUser(user);
+    openUserModal();
+  };
+
+  // Переход к существующему чату
+  const handleOpenChat = () => {
+    if (!selectedUser || !userData) return;
+    
+    const existingChat = chatWithCompanions.find(
+      chat => chat.companion.userId === selectedUser.userId
+    );
+    
+    if (existingChat) {
+      setSelectedChat({ chatId: existingChat.chatId, companionId: selectedUser.userId });
+    }
+    
+    closeUserModal();
+  };
 
   const handleTabChange = (tab: string) => {
     setSearchParams({ tab });
@@ -137,7 +165,6 @@ const Home = () => {
         }
       } catch (e) { }
     }
-    // Можно добавить обработку других событий (new-chat, added-to-contacts)
   };
 
   // При открытии чата убираем индикатор непрочитанного
@@ -168,6 +195,50 @@ const Home = () => {
   }, [selectedChat]);
 
 const { themeType, jsx: SettingsUI } = Settings();
+  const createPrivateChat = async (creatorId: number, companionId: number) => {
+    const response = await fetch("/api/chat/private", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ creatorId, companionId }),
+    });
+    if (!response.ok) throw new Error("Failed to create private chat");
+    return await response.json();
+  };
+
+  const handleCreateChat = async () => {
+    if (!selectedUser || !userData) return;
+    try {
+      const res = await createPrivateChat(userData.currentUser.userId, selectedUser.userId);
+      // Обновляем userData в localStorage
+      const newChat = { chatId: res.chatId, userId: res.companion.userId as any, joinDttm: res.createdDttm, leaveDttm: null };
+      const newCompanion = {
+        userId: res.companion.userId,
+        nickname: res.companion.nickname,
+        firstname: res.companion.firstname,
+        secondname: res.companion.secondname,
+        profilePictureLink: res.companion.profilePictureLink,
+        dateOfBirth: res.companion.dateOfBirth,
+        phone: res.companion.phone,
+        email: res.companion.email,
+        active: res.companion.active
+      };
+      const updatedUserData = {
+        ...userData,
+        myChats: [...userData.myChats, newChat],
+        companions: [...userData.companions, newCompanion]
+      };
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      setUserData(updatedUserData);
+      setIsCompanion(true);
+      // Открываем чат сразу после создания
+      setSelectedChat({ chatId: res.chatId, companionId: res.companion.userId });
+      closeUserModal();
+    } catch (e) {
+      // Logging only in English!
+    }
+  };
 
   return (
     <MantineProvider forceColorScheme={themeType?'dark':'light'}>
@@ -192,12 +263,26 @@ const { themeType, jsx: SettingsUI } = Settings();
           <Button color="red" onClick={handleLogout} fullWidth>
             Logout
           </Button>
-        </Drawer>
+      </Drawer>
+      
+      {/* Модальное окно пользователя */}
+      {selectedUser && (
+        <UserModal
+          otherUser={selectedUser}
+          currentUser={currentUser}
+          isCompanion={isCompanion}
+          onOpenChat={handleOpenChat}
+          onCreateChat={handleCreateChat}
+          opened={isUserModalOpen}
+          onClose={closeUserModal}
+        />
+      )}
+      
       <AppShell
         padding="md"
         header={{ height: 70 }}
         navbar={{
-          width: 430, // Увеличиваем ширину для двух колонок
+          width: 430,
           breakpoint: "sm",
           collapsed: { mobile: false },
         }}
@@ -223,7 +308,6 @@ const { themeType, jsx: SettingsUI } = Settings();
 
         <AppShell.Navbar p={0} bg="blue.8">
           <Flex h="100%">
-            {/* Левая колонка с кнопками навигации */}
             <Box w={80} h="100%" bg="blue.8">
               <Stack gap={0} pt="md">
                 <NavLink
@@ -253,7 +337,6 @@ const { themeType, jsx: SettingsUI } = Settings();
               </Stack>
             </Box>
 
-            {/* Правая колонка с контентом */}
             <Box w={350} h="100%" bg="blue.8">
               <Box p="md">
                 <Input
@@ -265,18 +348,27 @@ const { themeType, jsx: SettingsUI } = Settings();
                   className={classes.searchInput}
                   size="md"
                 />
-                
               </Box>
 
               <ScrollArea h="calc(100% - 60px)" px="md">
-                {filteredChats.length === 0 && activeTab === "chats" ? (
-                  <Text p="md" c="white" size="md">
-                    {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
-                  </Text>
-                ) : activeTab === "chats" ? (
-                  <Chats chats={filteredChats} unreadChats={unreadChats} onSelectChat={handleChatSelect} selectedChatId={selectedChat?.chatId} />
+                {activeTab === "chats" ? (
+                  filteredChats.length === 0 ? (
+                    <Text p="md" c="white" size="md">
+                      {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
+                    </Text>
+                  ) : (
+                    <Chats 
+                      chats={filteredChats} 
+                      unreadChats={unreadChats} 
+                      onSelectChat={handleChatSelect} 
+                      selectedChatId={selectedChat?.chatId} 
+                    />
+                  )
                 ) : (
-                  <Search value={searchQuery} />
+                  <Search 
+                    value={searchQuery} 
+                    onUserSelect={handleUserSelect} 
+                  />
                 )}
               </ScrollArea>
             </Box>

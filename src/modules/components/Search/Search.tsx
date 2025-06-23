@@ -1,10 +1,10 @@
+// Search.tsx
 import { useEffect, useCallback, useState } from "react";
 import debounce from "lodash.debounce";
 import searchUsers from "../../api/searchUsers";
 import { UnstyledButton, Group, Avatar, Text, Box } from "@mantine/core";
 import defaultProfilePicture from "../../../assets/default_profile_picture.png";
 
-// Тип DotUser (аналогично User из Home.utils.ts)
 type DotUser = {
   userId: number;
   nickname: string;
@@ -13,18 +13,16 @@ type DotUser = {
   profilePictureLink?: string;
 };
 
-// Комментарии и логи только на английском!
 type SearchProps = {
   value: string;
+  onUserSelect: (user: DotUser) => void; // Добавлен обработчик выбора
 };
 
-const Search = ({ value }: SearchProps) => {
+const Search = ({ value, onUserSelect }: SearchProps) => {
   const [results, setResults] = useState<DotUser[]>([]);
 
-  // Debounced функция поиска
   const debouncedSearch = useCallback(
     debounce(async (query: string) => {
-      console.log("debouncedSearch called with:", query);
       if (query.trim().length === 0) {
         setResults([]);
         return;
@@ -32,7 +30,6 @@ const Search = ({ value }: SearchProps) => {
       try {
         const users = await searchUsers(query);
         setResults(users);
-        console.log("Search results:", users);
       } catch (error) {
         setResults([]);
         console.error("Search error:", error);
@@ -49,12 +46,13 @@ const Search = ({ value }: SearchProps) => {
     <Box p="xs">
       {results.length === 0 && value.trim() !== "" && (
         <Text p="md" c="white" size="md">
-        Пользователи не найдены
-      </Text>
+          Пользователи не найдены
+        </Text>
       )}
       {results.map((user) => (
         <UnstyledButton
           key={user.userId}
+          onClick={() => onUserSelect(user)} // Вызываем обработчик при клике
           style={{
             width: "100%",
             textAlign: "left",
@@ -67,7 +65,12 @@ const Search = ({ value }: SearchProps) => {
           }}
         >
           <Group wrap="nowrap" gap={12} align="center">
-            <Avatar src={user.profilePictureLink || defaultProfilePicture} radius="xl" size="md" style={{ marginLeft: 12 }} />
+            <Avatar 
+              src={user.profilePictureLink || defaultProfilePicture} 
+              radius="xl" 
+              size="md" 
+              style={{ marginLeft: 12 }} 
+            />
             <Box style={{ flex: 1, marginLeft: 12 }}>
               <Text fw={700} size="md" c="white">
                 {user.nickname}
@@ -85,4 +88,4 @@ const Search = ({ value }: SearchProps) => {
   );
 };
 
-export default Search; 
+export default Search;
