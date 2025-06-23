@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -21,7 +22,8 @@ import {
   AppShellAside,
   Switch,
   createTheme,
-  MantineProvider
+  MantineProvider,
+  Space
 } from "@mantine/core";
 import {
   IconSearch,
@@ -165,40 +167,10 @@ const Home = () => {
     selectedChatIdRef.current = selectedChat?.chatId ?? null;
   }, [selectedChat]);
 
-  const themeLight =  createTheme({
-
-});
-
-const themeDark = createTheme({
-  colors: {
-    blue: [
-      '#eef3ff',
-      '#dee2f2',
-      '#bdc2de',
-      '#98a0ca',
-      '#7a84ba',
-      '#6672b0',
-      '#5c68ac',
-      '#4c5897',
-      '#424e88',
-      '#364379',
-    ],
-    
-  },
-
-  defaultRadius: 'xl',
-
-  shadows: {
-    md: '1px 1px 3px rgba(0, 0, 0, .25)',
-    xl: '5px 5px 3px rgba(0, 0, 0, .25)',
-  },
-
-});
-
 const { themeType, jsx: SettingsUI } = Settings();
 
   return (
-    <MantineProvider theme = {themeType ? themeDark : themeLight}>
+    <MantineProvider forceColorScheme={themeType?'dark':'light'}>
         <Drawer
           opened={settingsOpened}
           onClose={closeSettings}
@@ -207,15 +179,16 @@ const { themeType, jsx: SettingsUI } = Settings();
           size={400}
           overlayProps={{ opacity: 0 }}
           withCloseButton={true}
-          //styles={{
-          //  body: { paddingTop: 20, background: theme.colors.blue[9] },
-          //  header: { borderBottom: "1px solid #eee", background: theme.colors.blue[9] },
-          //  content: { background: theme.colors.blue[9] },
-          //}}
+          styles={{
+          body: { paddingTop: 20, background: theme.colors.blue[9] },
+          header: { borderBottom: "1px solid #eee", background: theme.colors.blue[9] },
+          content: { background: theme.colors.blue[9] },
+          }}
+          
         >
 
-          {SettingsUI}          
-  
+          {SettingsUI}      
+          <Space h="md" />    
           <Button color="red" onClick={handleLogout} fullWidth>
             Logout
           </Button>

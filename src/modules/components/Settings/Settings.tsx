@@ -1,9 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getSettings, updateTheme } from '../../api/getSettings.tsx';
-import { MantineProvider, useMantineTheme, createTheme, Button, Drawer, Switch } from "@mantine/core";
+import { Switch } from "@mantine/core";
 import { IconMoonStars, IconSun } from '@tabler/icons-react';
-import { useDisclosure } from '@mantine/hooks';
-import { useAuth } from '../AuthContext/AuthContext.tsx';
 
 
 
