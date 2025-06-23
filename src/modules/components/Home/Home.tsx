@@ -156,6 +156,82 @@ const Home = () => {
         }
       } catch (e) { }
     }
+    // Обработка события нового чата
+    else if (topic === 'new-chat') {
+      try {
+        const chatInfo = JSON.parse(body);
+        // Получаем userData из localStorage
+        const data = localStorage.getItem('userData');
+        if (!data) {
+          return;
+        }
+        const userData = JSON.parse(data);
+        // Проверяем, нет ли уже такого чата
+        const alreadyExists = userData.myChats.some((c: any) => c.chatId === chatInfo.chatId);
+        if (alreadyExists) {
+          return;
+        }
+        const userId = userData.currentUser.userId;
+        // Добавляем новый чат
+        const newChat = {
+          chatId: chatInfo.chatId,
+          userId: chatInfo.creator.userId,
+          joinDttm: chatInfo.createdDttm,
+          leaveDttm: null
+        };
+        // Добавляем нового компаньона (creator)
+        const newCompanion = {
+          userId: chatInfo.creator.userId,
+          nickname: chatInfo.creator.nickname,
+          firstname: chatInfo.creator.firstname,
+          secondname: chatInfo.creator.secondname,
+          profilePictureLink: chatInfo.creator.profilePictureLink,
+          dateOfBirth: null,
+          phone: null,
+          email: null,
+          active: true
+        };
+        // Добавляем ChatMember для текущего пользователя
+        const myMember = {
+          chatId: chatInfo.chatId,
+          userId: userId,
+          joinDttm: chatInfo.createdDttm,
+          leaveDttm: null
+        };
+        // Добавляем ChatMember для creator (если это не мы)
+        const creatorMember = {
+          chatId: chatInfo.chatId,
+          userId: chatInfo.creator.userId,
+          joinDttm: chatInfo.createdDttm,
+          leaveDttm: null
+        };
+        // Обновляем allChatMembers (убираем дубли)
+        const updatedAllChatMembers = [
+          ...userData.allChatMembers,
+          myMember,
+          ...(userId !== chatInfo.creator.userId ? [creatorMember] : [])
+        ].filter(
+          (v, i, a) => a.findIndex(t => t.chatId === v.chatId && t.userId === v.userId) === i
+        );
+        // Обновляем userData
+        const updatedUserData = {
+          ...userData,
+          myChats: [...userData.myChats, newChat],
+          companions: [...userData.companions, newCompanion],
+          allChatMembers: updatedAllChatMembers
+        };
+        localStorage.setItem('userData', JSON.stringify(updatedUserData));
+        setUserData(updatedUserData);
+        // Добавляем чат в непрочитанные
+        setUnreadChats(prev => {
+          const next = new Set(prev);
+          next.add(chatInfo.chatId);
+          return next;
+        });
+      } catch (e) {
+        console.error('[WS new-chat] Error:', e);
+      }
+    }
   };
 
   // При открытии чата убираем индикатор непрочитанного
@@ -214,10 +290,39 @@ const Home = () => {
         email: res.companion.email,
         active: res.companion.active
       };
+      const userId = userData.currentUser.userId;
+
+      // Добавляем ChatMember для текущего пользователя
+      const myMember = {
+        chatId: res.chatId,
+        userId: userId,
+        joinDttm: res.createdDttm,
+        leaveDttm: null
+      };
+
+      // Добавляем ChatMember для компаньона
+      const companionMember = {
+        chatId: res.chatId,
+        userId: res.companion.userId,
+        joinDttm: res.createdDttm,
+        leaveDttm: null
+      };
+
+      // Обновляем allChatMembers (убираем дубли)
+      const updatedAllChatMembers = [
+        ...userData.allChatMembers,
+        myMember,
+        companionMember
+      ].filter(
+        (v, i, a) => a.findIndex(t => t.chatId === v.chatId && t.userId === v.userId) === i
+      );
+
+      // Обновляем userData
       const updatedUserData = {
         ...userData,
         myChats: [...userData.myChats, newChat],
-        companions: [...userData.companions, newCompanion]
+        companions: [...userData.companions, newCompanion],
+        allChatMembers: updatedAllChatMembers
       };
       localStorage.setItem('userData', JSON.stringify(updatedUserData));
       setUserData(updatedUserData);
