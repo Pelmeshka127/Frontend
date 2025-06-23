@@ -1,10 +1,18 @@
-// AuthContext.tsx
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { connectWebSocket, disconnectWebSocket } from '../../api/ws';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
+  register: (userData: {
+    nickname: string;
+    firstname: string;
+    secondname: string;
+    dateOfBirth: string;
+    phone: string;
+    email: string;
+    password: string;
+  }) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -49,7 +57,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       disconnectWebSocket();
     }
-    // Отключаем WS при размонтировании
     return () => {
       disconnectWebSocket();
     };
@@ -76,11 +83,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (userId && !sessionInfo.companions.some((c: any) => c.userId === userId)) {
       sessionInfo.companions = [...sessionInfo.companions, sessionInfo.currentUser];
     }
-    localStorage.setItem('userData', JSON.stringify(sessionInfo));
 
-    // 4. Ставим isAuthenticated
+    localStorage.setItem('userData', JSON.stringify(sessionInfo));
     setIsAuthenticated(true);
     connectWebSocket();
+  };
+
+  const register = async (userData: {
+    nickname: string;
+    firstname: string;
+    secondname: string;
+    dateOfBirth: string;
+    phone: string;
+    email: string;
+    password: string;
+  }) => {
+    const response = await fetch(`api/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Registration failed');
+    }
+
+    await login(userData.nickname, userData.password);
   };
 
   const logout = () => {
@@ -90,7 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
