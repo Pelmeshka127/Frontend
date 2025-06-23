@@ -10,9 +10,7 @@ import {
   Input,
   Text,
   useMantineTheme,
-  Loader,
   ScrollArea,
-  UnstyledButton,
   ActionIcon,
   NavLink,
   Drawer,
@@ -23,8 +21,7 @@ import {
   IconSearch,
   IconSettings,
   IconMessage,
-  IconChevronRight,
-  IconUsers,
+  IconUserPlus,
   IconMessages,
 } from "@tabler/icons-react";
 import defaultProfilePicture from "../../../assets/default_profile_picture.png";
@@ -35,14 +32,13 @@ import { useAuth } from "../AuthContext/AuthContext";
 import { Chats } from '../Chat/Chats';
 import { subscribeToUserEvents, connectWebSocket } from '../../api/ws';
 import {
-  ChatMember,
   User,
   ChatWithCompanion,
-  Contact,
-  UserData,
-  getChatIdWithUser,
   mapChatsWithCompanions,
+  UserData
 } from './Home.utils';
+import Search from "../Search/Search";
+import { UserModal } from "../UserModal/UserModal";
 
 const Home = () => {
   const theme = useMantineTheme();
@@ -56,11 +52,26 @@ const Home = () => {
   const addMessageToChatRef = useRef<null | ((chatId: number, message: any) => void)>(null);
   const selectedChatIdRef = useRef<number | null>(null);
 
+  // Состояния для управления модальным окном пользователя
+  const [isUserModalOpen, { open: openUserModal, close: closeUserModal }] = useDisclosure(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isCompanion, setIsCompanion] = useState(false);
+
   // Загружаем userData из localStorage
   const [userData, setUserData] = useState<UserData | null>(() => {
     const data = localStorage.getItem('userData');
     return data ? JSON.parse(data) : null;
   });
+
+  // Проверяем, есть ли выбранный пользователь в companions
+  useEffect(() => {
+    if (selectedUser && userData) {
+      const companionExists = userData.companions.some(
+        companion => companion.userId === selectedUser.userId
+      );
+      setIsCompanion(companionExists);
+    }
+  }, [selectedUser, userData]);
 
   // Если данных нет — показываем ошибку
   if (!userData) {
@@ -74,16 +85,10 @@ const Home = () => {
     );
   }
 
-  const { currentUser, myChats, allChatMembers, companions, contacts } = userData;
+  const { currentUser, myChats, allChatMembers, companions } = userData;
 
   // companions: User[] -> ChatWithCompanion[] (сопоставляем chatId)
   const chatWithCompanions: ChatWithCompanion[] = mapChatsWithCompanions(myChats, allChatMembers, companions, currentUser);
-
-  // Контактные пользователи (ищем их среди companions)
-  const contactUsers = contacts.map((contact) => {
-    const user = companions.find((c) => c.userId === contact.userId);
-    return user ? { contact, user } : null;
-  }).filter((entry): entry is { contact: Contact; user: User } => !!entry);
 
   const filteredChats = chatWithCompanions.filter((chat) => {
     if (!searchQuery) return true;
@@ -95,18 +100,26 @@ const Home = () => {
     );
   });
 
-  const filteredContacts = contactUsers.filter((entry) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      entry.user.nickname.toLowerCase().includes(query) ||
-      (entry.user.firstname && entry.user.firstname.toLowerCase().includes(query)) ||
-      (entry.user.secondname && entry.user.secondname.toLowerCase().includes(query))
-    );
-  });
+  // Обработчик выбора пользователя в поиске
+  const handleUserSelect = (user: User) => {
+    setSelectedUser(user);
+    openUserModal();
+  };
 
-  // Функция для получения chatId по userId
-  const getChatIdWithUserMemo = (userId: number): number | null => getChatIdWithUser(myChats, allChatMembers, userId);
+  // Переход к существующему чату
+  const handleOpenChat = () => {
+    if (!selectedUser || !userData) return;
+    
+    const existingChat = chatWithCompanions.find(
+      chat => chat.companion.userId === selectedUser.userId
+    );
+    
+    if (existingChat) {
+      setSelectedChat({ chatId: existingChat.chatId, companionId: selectedUser.userId });
+    }
+    
+    closeUserModal();
+  };
 
   const handleTabChange = (tab: string) => {
     setSearchParams({ tab });
@@ -143,7 +156,82 @@ const Home = () => {
         }
       } catch (e) { }
     }
-    // Можно добавить обработку других событий (new-chat, added-to-contacts)
+    // Обработка события нового чата
+    else if (topic === 'new-chat') {
+      try {
+        const chatInfo = JSON.parse(body);
+        // Получаем userData из localStorage
+        const data = localStorage.getItem('userData');
+        if (!data) {
+          return;
+        }
+        const userData = JSON.parse(data);
+        // Проверяем, нет ли уже такого чата
+        const alreadyExists = userData.myChats.some((c: any) => c.chatId === chatInfo.chatId);
+        if (alreadyExists) {
+          return;
+        }
+        const userId = userData.currentUser.userId;
+        // Добавляем новый чат
+        const newChat = {
+          chatId: chatInfo.chatId,
+          userId: chatInfo.creator.userId,
+          joinDttm: chatInfo.createdDttm,
+          leaveDttm: null
+        };
+        // Добавляем нового компаньона (creator)
+        const newCompanion = {
+          userId: chatInfo.creator.userId,
+          nickname: chatInfo.creator.nickname,
+          firstname: chatInfo.creator.firstname,
+          secondname: chatInfo.creator.secondname,
+          profilePictureLink: chatInfo.creator.profilePictureLink,
+          dateOfBirth: null,
+          phone: null,
+          email: null,
+          active: true
+        };
+        // Добавляем ChatMember для текущего пользователя
+        const myMember = {
+          chatId: chatInfo.chatId,
+          userId: userId,
+          joinDttm: chatInfo.createdDttm,
+          leaveDttm: null
+        };
+        // Добавляем ChatMember для creator (если это не мы)
+        const creatorMember = {
+          chatId: chatInfo.chatId,
+          userId: chatInfo.creator.userId,
+          joinDttm: chatInfo.createdDttm,
+          leaveDttm: null
+        };
+        // Обновляем allChatMembers (убираем дубли)
+        const updatedAllChatMembers = [
+          ...userData.allChatMembers,
+          myMember,
+          ...(userId !== chatInfo.creator.userId ? [creatorMember] : [])
+        ].filter(
+          (v, i, a) => a.findIndex(t => t.chatId === v.chatId && t.userId === v.userId) === i
+        );
+        // Обновляем userData
+        const updatedUserData = {
+          ...userData,
+          myChats: [...userData.myChats, newChat],
+          companions: [...userData.companions, newCompanion],
+          allChatMembers: updatedAllChatMembers
+        };
+        localStorage.setItem('userData', JSON.stringify(updatedUserData));
+        setUserData(updatedUserData);
+        // Добавляем чат в непрочитанные
+        setUnreadChats(prev => {
+          const next = new Set(prev);
+          next.add(chatInfo.chatId);
+          return next;
+        });
+      } catch (e) {
+        console.error('[WS new-chat] Error:', e);
+      }
+    }
   };
 
   // При открытии чата убираем индикатор непрочитанного
@@ -173,6 +261,80 @@ const Home = () => {
     selectedChatIdRef.current = selectedChat?.chatId ?? null;
   }, [selectedChat]);
 
+  const createPrivateChat = async (creatorId: number, companionId: number) => {
+    const response = await fetch("/api/chat/private", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ creatorId, companionId }),
+    });
+    if (!response.ok) throw new Error("Failed to create private chat");
+    return await response.json();
+  };
+
+  const handleCreateChat = async () => {
+    if (!selectedUser || !userData) return;
+    try {
+      const res = await createPrivateChat(userData.currentUser.userId, selectedUser.userId);
+      // Обновляем userData в localStorage
+      const newChat = { chatId: res.chatId, userId: res.companion.userId as any, joinDttm: res.createdDttm, leaveDttm: null };
+      const newCompanion = {
+        userId: res.companion.userId,
+        nickname: res.companion.nickname,
+        firstname: res.companion.firstname,
+        secondname: res.companion.secondname,
+        profilePictureLink: res.companion.profilePictureLink,
+        dateOfBirth: res.companion.dateOfBirth,
+        phone: res.companion.phone,
+        email: res.companion.email,
+        active: res.companion.active
+      };
+      const userId = userData.currentUser.userId;
+
+      // Добавляем ChatMember для текущего пользователя
+      const myMember = {
+        chatId: res.chatId,
+        userId: userId,
+        joinDttm: res.createdDttm,
+        leaveDttm: null
+      };
+
+      // Добавляем ChatMember для компаньона
+      const companionMember = {
+        chatId: res.chatId,
+        userId: res.companion.userId,
+        joinDttm: res.createdDttm,
+        leaveDttm: null
+      };
+
+      // Обновляем allChatMembers (убираем дубли)
+      const updatedAllChatMembers = [
+        ...userData.allChatMembers,
+        myMember,
+        companionMember
+      ].filter(
+        (v, i, a) => a.findIndex(t => t.chatId === v.chatId && t.userId === v.userId) === i
+      );
+
+      // Обновляем userData
+      const updatedUserData = {
+        ...userData,
+        myChats: [...userData.myChats, newChat],
+        companions: [...userData.companions, newCompanion],
+        allChatMembers: updatedAllChatMembers
+      };
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      setUserData(updatedUserData);
+      setIsCompanion(true);
+      // Открываем чат сразу после создания
+      setSelectedChat({ chatId: res.chatId, companionId: res.companion.userId });
+      closeUserModal();
+    } catch (e) {
+      // Logging only in English!
+    }
+  };
+
   return (
     <>
       <Drawer
@@ -193,11 +355,25 @@ const Home = () => {
           Logout
         </Button>
       </Drawer>
+      
+      {/* Модальное окно пользователя */}
+      {selectedUser && (
+        <UserModal
+          otherUser={selectedUser}
+          currentUser={currentUser}
+          isCompanion={isCompanion}
+          onOpenChat={handleOpenChat}
+          onCreateChat={handleCreateChat}
+          opened={isUserModalOpen}
+          onClose={closeUserModal}
+        />
+      )}
+      
       <AppShell
         padding="md"
         header={{ height: 70 }}
         navbar={{
-          width: 430, // Увеличиваем ширину для двух колонок
+          width: 430,
           breakpoint: "sm",
           collapsed: { mobile: false },
         }}
@@ -223,7 +399,6 @@ const Home = () => {
 
         <AppShell.Navbar p={0} bg="blue.8">
           <Flex h="100%">
-            {/* Левая колонка с кнопками навигации */}
             <Box w={80} h="100%" bg="blue.8">
               <Stack gap={0} pt="md">
                 <NavLink
@@ -239,21 +414,20 @@ const Home = () => {
                   c="white"
                 />
                 <NavLink
-                  leftSection={<IconUsers size={24} color="white" />}
-                  active={activeTab === "contacts"}
-                  onClick={() => handleTabChange("contacts")}
+                  leftSection={<IconUserPlus size={24} color="white" />}
+                  active={activeTab === "search"}
+                  onClick={() => handleTabChange("search")}
                   variant="subtle"
                   style={{
                     borderRadius: 0,
-                    borderLeft: activeTab === "contacts" ? `4px solid ${theme.colors.blue[5]}` : "none",
-                    backgroundColor: activeTab === "contacts" ? theme.colors.blue[7] : "transparent",
+                    borderLeft: activeTab === "search" ? `4px solid ${theme.colors.blue[5]}` : "none",
+                    backgroundColor: activeTab === "search" ? theme.colors.blue[7] : "transparent",
                   }}
                   c="white"
                 />
               </Stack>
             </Box>
 
-            {/* Правая колонка с контентом */}
             <Box w={350} h="100%" bg="blue.8">
               <Box p="md">
                 <Input
@@ -265,55 +439,29 @@ const Home = () => {
                   className={classes.searchInput}
                   size="md"
                 />
-            </Box>
+              </Box>
 
-            <ScrollArea h="calc(100% - 60px)" px="md">
-              {filteredChats.length === 0 && activeTab === "chats" ? (
-                <Text p="md" c="white" size="md">
-                  {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
-                </Text>
-              ) : activeTab === "chats" ? (
-                <Chats chats={filteredChats} unreadChats={unreadChats} onSelectChat={handleChatSelect} selectedChatId={selectedChat?.chatId} />
-              ) : (
-                <>
-                  {filteredContacts.length === 0 ? (
+              <ScrollArea h="calc(100% - 60px)" px="md">
+                {activeTab === "chats" ? (
+                  filteredChats.length === 0 ? (
                     <Text p="md" c="white" size="md">
-                      {searchQuery ? "Контакты не найдены" : "Нет доступных контактов"}
+                      {searchQuery ? "Чаты не найдены" : "Нет доступных чатов"}
                     </Text>
                   ) : (
-                    filteredContacts.map(({ user }) => {
-                      const chatId = getChatIdWithUserMemo(user.userId);
-                      return (
-                        <UnstyledButton
-                          key={user.userId}
-                          className={classes.link}
-                          onClick={() => chatId && handleChatSelect(chatId, user.userId)}
-                          py="sm"
-                          disabled={!chatId}
-                        >
-                          <Group>
-                            <Avatar src={user.profilePictureLink || defaultProfilePicture} size="md" radius="xl" />
-                            <Box style={{ flex: 1 }}>
-                              <Text size="md" fw={500} c="white">
-                                {user.nickname}
-                              </Text>
-                              <Text size="sm" c="blue.3">
-                                {user.firstname && user.secondname
-                                  ? `${user.firstname} ${user.secondname}`
-                                  : chatId
-                                    ? "Перейти в чат"
-                                    : "Чата нет"}
-                              </Text>
-                            </Box>
-                            {chatId && <IconChevronRight size={16} color="white" />}
-                          </Group>
-                        </UnstyledButton>
-                      );
-                    })
-                  )}
-                </>
-              )}
-            </ScrollArea>
+                    <Chats 
+                      chats={filteredChats} 
+                      unreadChats={unreadChats} 
+                      onSelectChat={handleChatSelect} 
+                      selectedChatId={selectedChat?.chatId} 
+                    />
+                  )
+                ) : (
+                  <Search 
+                    value={searchQuery} 
+                    onUserSelect={handleUserSelect} 
+                  />
+                )}
+              </ScrollArea>
             </Box>
           </Flex>
         </AppShell.Navbar>

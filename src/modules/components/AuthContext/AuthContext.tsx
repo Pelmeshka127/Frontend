@@ -36,6 +36,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       })
       .then(data => {
+        // Добавляем currentUser в companions, если его там нет
+        const userId = data.currentUser?.userId;
+        if (userId && !data.companions.some((c: any) => c.userId === userId)) {
+          data.companions = [...data.companions, data.currentUser];
+        }
         localStorage.setItem('userData', JSON.stringify(data));
         setIsAuthenticated(true);
       })
@@ -72,6 +77,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const sessionInfoResp = await fetch('/api/session/info', { credentials: 'include' });
     if (!sessionInfoResp.ok) throw new Error('Failed to fetch session info');
     const sessionInfo = await sessionInfoResp.json();
+
+    // 3. Сохраняем в localStorage
+    const userId = sessionInfo.currentUser?.userId;
+    if (userId && !sessionInfo.companions.some((c: any) => c.userId === userId)) {
+      sessionInfo.companions = [...sessionInfo.companions, sessionInfo.currentUser];
+    }
 
     localStorage.setItem('userData', JSON.stringify(sessionInfo));
     setIsAuthenticated(true);

@@ -18,7 +18,7 @@ interface ChatProps {
   addMessageToChatRef?: React.MutableRefObject<null | ((chatId: number, message: any) => void)>;
 }
 
-const PAGE_SIZE = 40;
+const PAGE_SIZE = 80;
 
 const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef }) => {
   const [messages, setMessages] = useState<MessageWithTextDto[]>([]);
@@ -33,7 +33,8 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
   const oldScrollTopRef = useRef<number | null>(null);
   const loadingMoreRef = useRef(false);
   const [optimisticId, setOptimisticId] = useState<number | null>(null);
-  const prevMessagesLength = useRef(messages.length);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<number>>(new Set());
 
   const userDataRaw = localStorage.getItem('userData');
   let currentUser = null;
@@ -165,6 +166,16 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
         if (incomingChatId === chatId) {
           setMessages(prev => {
             if (prev.some(m => m.messageId === message.messageId)) return prev;
+            // Добавляем id сообщения в список анимируемых
+            setAnimatedMessageIds(ids => new Set(ids).add(message.messageId));
+            // Удаляем id из списка через 400мс (длительность анимации)
+            setTimeout(() => {
+              setAnimatedMessageIds(ids => {
+                const newIds = new Set(ids);
+                newIds.delete(message.messageId);
+                return newIds;
+              });
+            }, 400);
             return [...prev, message];
           });
           setShouldScrollToBottom(true);
@@ -178,7 +189,6 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
 
   if (!chatId) return <div className="error-message">Чат не найден</div>;
   if (!currentUser || !companion) return <div className="error-message">Ошибка загрузки данных</div>;
-  if (currentUser.userId === companionId) return <div className='error-message'>Нельзя писать самому себе</div>;
 
   return (
     <Stack className="chat-container">
@@ -214,7 +224,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
           const isCurrentUser = message.senderId === currentUser.userId;
           const { time, date } = formatDateTime(message.sendDttm);
           const senderNickname = isCurrentUser ? currentUser.nickname : companion.nickname;
-          const className = message.messageId === optimisticId ? 'chat-message-appear' : '';
+          const className = animatedMessageIds.has(message.messageId) ? 'chat-message-appear' : '';
           return (
             <ChatMessage
               key={message.messageId}

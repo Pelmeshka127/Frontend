@@ -43,8 +43,8 @@
 
 .chat-message-appear {
   opacity: 0;
-  transform: translateY(20px);
-  animation: appearUp 0.3s forwards;
+  transform: translateY(16px);
+  animation: appearUp 0.4s ease forwards;
 }
 
 @keyframes appearUp {

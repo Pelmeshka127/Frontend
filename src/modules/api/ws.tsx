@@ -24,14 +24,14 @@ export function connectWebSocket(onMessage?: (msg: string) => void) {
   stompClient.onConnect = () => {
     console.log('[WS] Connected');
     // Подписки будут устанавливаться через subscribeToUserEvents
-    if (onMessage) {
-      // Пример подписки на эхо-топик
-      subscriptions.push(
-        stompClient?.subscribe('/topic/echo', (message) => {
-          onMessage(message.body);
-        })
-      );
-    }
+    // if (onMessage) {
+    //   // Пример подписки на эхо-топик
+    //   subscriptions.push(
+    //     stompClient?.subscribe('/topic/echo', (message) => {
+    //       onMessage(message.body);
+    //     })
+    //   );
+    // }
   };
 
   stompClient.onStompError = (frame) => {
@@ -95,7 +95,27 @@ export function subscribeToUserEvents(userId: number, chatIds: number[], onMessa
   subscriptions.push(
     stompClient!.subscribe(`/topic/user/${userId}/new-chat`, (message) => {
       console.log('[WS subscribe] topic: new-chat, raw message:', message);
-      onMessage('new-chat', message.body);
+      let parsedBody = message.body;
+      // Если это массив с STOMP-сообщением (SockJS), парсим
+      try {
+        if (typeof parsedBody === 'string' && parsedBody.startsWith('a[')) {
+          const arr = JSON.parse(parsedBody);
+          if (Array.isArray(arr) && arr.length > 0) {
+            const str = arr[0];
+            // STOMP: ищем двойной перевод строки (\n\n), после него идёт JSON
+            const jsonStart = str.indexOf('\n\n');
+            if (jsonStart !== -1) {
+              let jsonStr = str.slice(jsonStart + 2);
+              // Убираем \u0000 на конце
+              if (jsonStr.endsWith('\u0000')) jsonStr = jsonStr.slice(0, -1);
+              parsedBody = jsonStr;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[WS subscribe] new-chat parse error:', e);
+      }
+      onMessage('new-chat', parsedBody);
     })
   );
   // Подписка на добавление в контакты
