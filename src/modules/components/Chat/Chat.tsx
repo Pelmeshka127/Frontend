@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getUserById, getCurrentUser } from '../../api/getUser';
+// import { useQuery } from '@tanstack/react-query';
+// import { getUserById, getCurrentUser } from '../../api/getUser';
 import {
   sendMessage,
   getLastNMessagesWithText,
@@ -10,7 +10,7 @@ import {
 import defaultProfilePicture from '../../../assets/default_profile_picture.png';
 import { ScrollArea, Group, Divider, Stack, Box, Button, Textarea } from '@mantine/core';
 import { ChatMessage } from '../ChatMessage';
-import { UserModal } from '../UserModal';
+// import { UserModal } from '../UserModal';
 
 interface ChatProps {
   chatId: number;
@@ -33,7 +33,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
   const oldScrollTopRef = useRef<number | null>(null);
   const loadingMoreRef = useRef(false);
   const [optimisticId, setOptimisticId] = useState<number | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  // const inputRef = useRef<HTMLTextAreaElement>(null);
   const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<number>>(new Set());
 
   const userDataRaw = localStorage.getItem('userData');
@@ -193,7 +193,7 @@ const Chat: React.FC<ChatProps> = ({ chatId, companionId, addMessageToChatRef })
   return (
     <Stack className="chat-container">
       <Group className="chat-header">
-        <UserModal otherUser={companion} currentUser={currentUser} />
+        {/* <UserModal otherUser={companion} currentUser={currentUser} /> */}
         <div className="header-info">
           <h3>{companion.nickname}</h3>
         </div>

@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { UnstyledButton, Group, Avatar, Box, Text } from '@mantine/core';
 import { IconChevronRight } from '@tabler/icons-react';
 import defaultProfilePicture from '../../../assets/default_profile_picture.png';

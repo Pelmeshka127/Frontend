@@ -7,7 +7,7 @@ let isSubscribed = false;
 let lastUserId: number | null = null;
 let lastChatIds: number[] = [];
 
-export function connectWebSocket(onMessage?: (msg: string) => void) {
+export function connectWebSocket() {
   if (stompClient) {
     if (stompClient.connected) return stompClient;
     // Если клиент есть, но не подключён — активируем
@@ -94,7 +94,6 @@ export function subscribeToUserEvents(userId: number, chatIds: number[], onMessa
   // Подписка на создание новых чатов для пользователя
   subscriptions.push(
     stompClient!.subscribe(`/topic/user/${userId}/new-chat`, (message) => {
-      console.log('[WS subscribe] topic: new-chat, raw message:', message);
       let parsedBody = message.body;
       // Если это массив с STOMP-сообщением (SockJS), парсим
       try {
@@ -121,7 +120,6 @@ export function subscribeToUserEvents(userId: number, chatIds: number[], onMessa
   // Подписка на добавление в контакты
   subscriptions.push(
     stompClient!.subscribe(`/topic/user/${userId}/added-to-contacts`, (message) => {
-      console.log('[WS subscribe] topic: added-to-contacts, raw message:', message);
       onMessage('added-to-contacts', message.body);
     })
   );
