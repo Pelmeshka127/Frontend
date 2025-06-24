@@ -4,8 +4,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { User } from './modules/components/User/index';
 import { NoMatch } from './components/NoMatch';
 import { Home } from './modules/components/Home';
-import { Chat, Chats } from './modules/components/Chat';
-import Search from './modules/components/Search';
+// import { Chat, Chats } from './modules/components/Chat';
+// import Search from './modules/components/Search';
 import LoginForm from './modules/components/LoginForm';
 import RegistrationForm from './modules/components/RegistrationForm';
 import { Settings } from './modules/components/Settings';
@@ -27,10 +27,10 @@ const AppRoutes = () => {
       <Route path="/register" element={<RegistrationForm />} />
       <Route path="/" element={isAuthenticated ? <Home /> : <Navigate to="/login" replace />} />
       <Route path="/user" element={isAuthenticated ? <User /> : <Navigate to="/login" replace />} />
-      <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/login" replace />} />
-      <Route path="/chats" element={isAuthenticated ? <Chats /> : <Navigate to="/login" replace />} />
-      <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
-      <Route path="/search" element={isAuthenticated ? <Search /> : <Navigate to="/login" replace />} />
+      {/*<Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} /> */}
+      {/* <Route path="/chat" element={isAuthenticated ? <Chat /> : <Navigate to="/login" replace />} /> */}
+      {/* <Route path="/chats" element={isAuthenticated ? <Chats /> : <Navigate to="/login" replace />} /> */}
+      {/* <Route path="/search" element={isAuthenticated ? <Search /> : <Navigate to="/login" replace />} /> */}
       <Route path="*" element={<NoMatch />} />
     </Routes>
   );
