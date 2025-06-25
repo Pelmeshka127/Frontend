@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+
+import { useState, useEffect, useRef, useContext } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AppShell,
@@ -16,6 +17,11 @@ import {
   Drawer,
   Button,
   Stack,
+  AppShellAside,
+  Switch,
+  createTheme,
+  MantineProvider,
+  Space
 } from "@mantine/core";
 import {
   IconSearch,
@@ -23,13 +29,16 @@ import {
   IconMessage,
   IconUserPlus,
   IconMessages,
+  IconSun,
+  IconMoonStars
 } from "@tabler/icons-react";
 import defaultProfilePicture from "../../../assets/default_profile_picture.png";
 import classes from "./Navbar.module.css";
 import { Chat } from "../Chat";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useToggle  } from "@mantine/hooks";
 import { useAuth } from "../AuthContext/AuthContext";
 import { Chats } from '../Chat/Chats';
+import { Settings } from '../Settings/Settings';
 import { subscribeToUserEvents, connectWebSocket } from '../../api/ws';
 import {
   User,
@@ -261,6 +270,7 @@ const Home = () => {
     selectedChatIdRef.current = selectedChat?.chatId ?? null;
   }, [selectedChat]);
 
+const { themeType, jsx: SettingsUI } = Settings();
   const createPrivateChat = async (creatorId: number, companionId: number) => {
     const response = await fetch("/api/chat/private", {
       method: "POST",
@@ -336,24 +346,28 @@ const Home = () => {
   };
 
   return (
-    <>
-      <Drawer
-        opened={settingsOpened}
-        onClose={closeSettings}
-        title="Настройки"
-        position="right"
-        size={400}
-        overlayProps={{ opacity: 0 }}
-        withCloseButton={true}
-        styles={{
+    <MantineProvider forceColorScheme={themeType?'dark':'light'}>
+        <Drawer
+          opened={settingsOpened}
+          onClose={closeSettings}
+          title="Настройки"
+          position="right"
+          size={400}
+          overlayProps={{ opacity: 0 }}
+          withCloseButton={true}
+          styles={{
           body: { paddingTop: 20, background: theme.colors.blue[9] },
           header: { borderBottom: "1px solid #eee", background: theme.colors.blue[9] },
           content: { background: theme.colors.blue[9] },
-        }}
-      >
-        <Button color="red" onClick={handleLogout} fullWidth>
-          Logout
-        </Button>
+          }}
+          
+        >
+
+          {SettingsUI}      
+          <Space h="md" />    
+          <Button color="red" onClick={handleLogout} fullWidth>
+            Logout
+          </Button>
       </Drawer>
       
       {/* Модальное окно пользователя */}
@@ -478,8 +492,9 @@ const Home = () => {
           </Container>
         </AppShell.Main>
       </AppShell>
-    </>
+    </MantineProvider>
   );
 };
+
 
 export default Home;

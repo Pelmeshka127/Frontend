@@ -83,7 +83,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (userId && !sessionInfo.companions.some((c: any) => c.userId === userId)) {
       sessionInfo.companions = [...sessionInfo.companions, sessionInfo.currentUser];
     }
-
     localStorage.setItem('userData', JSON.stringify(sessionInfo));
     setIsAuthenticated(true);
     connectWebSocket();
